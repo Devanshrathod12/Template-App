@@ -1,62 +1,120 @@
-import { StyleSheet, Text, View, TextInput, TouchableOpacity , Pressable } from 'react-native';
-import React ,{useState}from 'react';
-import { fontScale, moderateScale, moderateScaleVertical, scale, verticalScale } from '../../styles/styleconfig';
-import Icon from 'react-native-vector-icons/MaterialIcons';
-const Signup = ({navigation}) => {
-  // const HandleFirstClick () => {
-  //   if () {
-      
-  //   }
-  // }
-  const [click,setclick] = useState(false)
-  const [secondclick,setsecondclick] = useState(false)
+import React, { useState } from 'react';
+import { StyleSheet, Text, View, ScrollView, Alert, TouchableOpacity } from 'react-native';
+import {
+  fontScale,
+  moderateScale,
+  moderateScaleVertical,
+  verticalScale,
+} from '../../styles/styleconfig';
+import colors from '../../styles/colors';
+
+
+import FormCard from '../../Components/SignupComponents/FormCard';
+import InputField from '../../Components/SignupComponents/InputField';
+ import PasswordField from '../../Components/SignupComponents/PasswordField';
+ import CheckboxWithLabel from '../../Components/SignupComponents/CheckboxWithLabel';
+import LoadingButton from '../../Components/SignupComponents/LoadingButton';
+
+import useSignupHandler from '../../Components/SignupComponents/SignupApiHandler/useSignupHandler';
+import { showMessage } from 'react-native-flash-message';
+
+const Signup = ({ navigation }) => {
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    password: '',
+    confirm_password: '',
+  });
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+const [isConfirmPasswordVisible, setIsConfirmPasswordVisible] = useState(false);
+  const [agreePolicy, setAgreePolicy] = useState(false);
+  const [agreeTerms, setAgreeTerms] = useState(false);
+
+  const { handleSignup, isLoading } = useSignupHandler(navigation);
+
+  const updateField = (field, value) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const onSubmit = () => {
+    if (!agreePolicy || !agreeTerms) {
+     showMessage({
+  message: "You must agree to all terms and policies",
+  type: "danger",
+  icon: "danger",
+  duration: 4000,
+});
+
+      return;
+    }
+    handleSignup(formData);
+  };
+
   return (
     <View style={styles.mainContainer}>
-      <View style={styles.innerContainer}>
-        <View style={styles.verticalCard}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContainer}
+        showsVerticalScrollIndicator={false}
+      >
+        <FormCard>
           <Text style={styles.cardTitle}>Create Account</Text>
-          <TextInput
-            style={styles.inputField}
+
+          <InputField
             placeholder="Enter Your Name"
-            placeholderTextColor="#888"
+            value={formData.name}
+            onChangeText={text => updateField('name', text)}
           />
-          <TextInput
-            style={styles.inputField}
+          <InputField
             placeholder="Enter Your Email"
-            placeholderTextColor="#888"
+            keyboardType="email-address"
+            value={formData.email}
+            onChangeText={text => updateField('email', text)}
           />
-          <TextInput
-            style={styles.inputField}
+          <InputField
             placeholder="Enter Your Phone"
-            placeholderTextColor="#888"
+            keyboardType="phone-pad"
+            value={formData.phone}
+            onChangeText={text => updateField('phone', text)}
           />
-          <TextInput
-            style={styles.inputField}
+
+          <PasswordField
             placeholder="Create Password"
-            placeholderTextColor="#888"
+            value={formData.password}
+            onChangeText={text => updateField('password', text)}
+            visible={isPasswordVisible}
+            toggleVisibility={() => setIsPasswordVisible(prev => !prev)}
           />
-          <TextInput
-            style={styles.inputField}
+          <PasswordField
             placeholder="Confirm Password"
-            placeholderTextColor="#888"
+            value={formData.confirm_password}
+            onChangeText={text => updateField('confirm_password', text)}
+            visible={isConfirmPasswordVisible}
+            toggleVisibility={()=> setIsConfirmPasswordVisible(prev => !prev)}
           />
-         <Pressable style={styles.checkboxRow} onPress={() => setclick(!click)}>
-  <View style={styles.checkbox}>
-    {click && <Icon name="check" size={12} color="green" />}
-  </View>
-  <Text style={styles.checkboxLabel}>By signing up, you agree to our Terms & Privacy Policy.</Text>
-</Pressable>
-         <Pressable style={styles.checkboxRow} onPress={() => setsecondclick(!secondclick)}>
-  <View style={styles.checkbox}>
-    {secondclick && <Icon name="check" size={12} color="green" />}
-  </View>
-  <Text style={styles.checkboxLabel}>I agree to terms & conditions</Text>
-</Pressable>
-          <TouchableOpacity onPress={()=> navigation.navigate("SignIn")}  style={styles.greenButton}>
-            <Text style={styles.buttonText}>Sign Up</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+
+          <CheckboxWithLabel
+            checked={agreePolicy}
+            onToggle={() => setAgreePolicy(prev => !prev)}
+            label="By signing up, you agree to our Terms & Privacy Policy."
+          />
+          <CheckboxWithLabel
+            checked={agreeTerms}
+            onToggle={() => setAgreeTerms(prev => !prev)}
+            label="I agree to terms & conditions"
+          />
+
+         <LoadingButton text="Sign Up" onPress={onSubmit} isLoading={isLoading} />
+
+
+          <View style={styles.haveAccountContainer}>
+            <Text style={styles.accountText}>Already have an account? </Text>
+            <TouchableOpacity onPress={() => navigation.navigate('SignIn')}>
+              <Text style={styles.loginText}>Login</Text>
+            </TouchableOpacity>
+          </View>
+        </FormCard>
+      </ScrollView>
     </View>
   );
 };
@@ -66,72 +124,32 @@ export default Signup;
 const styles = StyleSheet.create({
   mainContainer: {
     flex: 1,
-    backgroundColor: '#000',
-    padding: moderateScale(16),
-    justifyContent: "center"
+    backgroundColor: '#f0f2f5',
   },
-  innerContainer: {
-    gap: moderateScaleVertical(8),
-  },
-  verticalCard: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: moderateScale(16),
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
+  scrollContainer: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    padding: moderateScale(20),
   },
   cardTitle: {
-    fontSize: fontScale(20),
-    fontWeight: 'bold',
-    textAlign: "center",
-  },
-  inputField: {
-    backgroundColor: '#fff',
-    paddingVertical: moderateScaleVertical(10),
-    paddingHorizontal: moderateScale(16),
-    borderRadius: moderateScale(6),
-    fontSize: fontScale(14),
-    borderWidth: 1,
-    borderColor: '#ccc',
-    marginTop: moderateScaleVertical(8),
-    marginBottom: moderateScaleVertical(6),
-  },
-  greenButton: {
-    backgroundColor: '#28a745',
-    paddingVertical: moderateScaleVertical(12),
-    paddingHorizontal: moderateScale(24),
-    borderRadius: moderateScale(8),
-    elevation: 3,
-    marginTop: moderateScaleVertical(10),
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: fontScale(16),
+    fontSize: fontScale(24),
     fontWeight: 'bold',
     textAlign: 'center',
+    color: '#333333',
+    marginBottom: verticalScale(10),
   },
-  checkboxRow: {
-  flexDirection: 'row',
-  alignItems: 'center',
-  marginTop: moderateScaleVertical(10),
-  marginBottom: moderateScaleVertical(6),
-},
-checkbox: {
-  width: scale(18),
-  height: verticalScale(18),
-  borderWidth: 1.5,
-  borderColor: '#999',
-  borderRadius: 4,
-  alignItems: 'center',
-  justifyContent: 'center',
-  marginRight: moderateScale(8),
-},
-
-checkboxLabel: {
-  fontSize: fontScale(13),
-  color: '#333',
-},
-
+  haveAccountContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginTop: verticalScale(20),
+  },
+  accountText: {
+    fontSize: fontScale(14),
+    color: '#888888',
+  },
+  loginText: {
+    fontSize: fontScale(14),
+    color: '#007bff',
+    fontWeight: 'bold',
+  },
 });
