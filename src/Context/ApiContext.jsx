@@ -103,7 +103,7 @@ export const ApiProvider = ({ children }) => {
   //get product data 
   const getProductsData = async () => {
   try {
-    const token = await AsyncStorage.getItem('authToken'); // ⬅️ token fetch
+    const token = await AsyncStorage.getItem('authToken');
 
     const response = await axios.get(`${URL}product/`, {
       headers: {
@@ -118,9 +118,32 @@ export const ApiProvider = ({ children }) => {
   }
 };
 
+// add to cart
+const AddToCart = async (addcart) => {
+  try {
+    const token = await AsyncStorage.getItem('authToken');
+    const response = await axios.post(`${URL}Cart/`, addcart, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    return response?.data;
+  } catch (error) {
+    console.log(
+      'Error during Add to cart backend:',
+      error.response?.data || error.message
+    );
+    return {
+      error: true,
+      message: error.response?.data?.detail || error.message || 'Unexpected error',
+    };
+  }
+};
 
   return (
-    <ApiContext.Provider value={{ SignupUser , Login , SendOtp  , VerifyOtp , ResetPassword , ReSendOtp , getProductsData}}>
+    <ApiContext.Provider value={{ SignupUser , Login , SendOtp  , VerifyOtp , ResetPassword , ReSendOtp , getProductsData , AddToCart}}>
       {children}
     </ApiContext.Provider>
   );

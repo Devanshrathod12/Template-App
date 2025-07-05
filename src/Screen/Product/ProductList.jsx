@@ -54,7 +54,6 @@ const ProductList = ({ navigation }) => {
           reviewCount: apiProduct.reviewCount || 152,
           offer: apiProduct.offer || '30% Off',
           description: apiProduct.description,
-          // ✅ सुधार 1: स्टॉक क्वांटिटी को स्टोर करें
           stock: parseInt(apiProduct.quantity, 10),
           specifications: Object.keys(apiProduct.specification).map(key => ({
             title: key
@@ -69,7 +68,7 @@ const ProductList = ({ navigation }) => {
         console.log('No products received from API.');
       }
     } catch (err) {
-      console.log('❌ Failed to fetch or format product:', err);
+      console.log('Failed to fetch or format product:', err);
       Alert.alert('Error', 'Could not load product details.');
     } finally {
       setLoading(false);

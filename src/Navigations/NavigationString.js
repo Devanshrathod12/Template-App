@@ -1,4 +1,4 @@
-import { Cart, FilterCategory, ForgetPass, HomeScreen, loder, OtpVerify, ResetPassword, SignIn } from "../Screen";
+import { Cart, FilterCategory, ForgetPass, HomeScreen, loder, OtpVerify, ResetPassword, SignIn, wishlist } from "../Screen";
 import AuthGate from "../Screen/Auth/AuthGate";
 import { Signup } from "../Screen/Login/Signup";
 import ProductList from "../Screen/Product/ProductList";
@@ -14,5 +14,6 @@ export default {
      AuthGate: "AuthGate",
      Cart:"Cart",
      ProductList:"ProductList",
-     FilterCategory:"FilterCategory"
+     FilterCategory:"FilterCategory",
+     wishlist:"wishlist"
 }
