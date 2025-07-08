@@ -22,7 +22,7 @@ const BottomTabs = () => {
         name="HomeTab" 
         component={HomeStack} 
         options={{
-          title: 'Home', 
+          tabBarLabel: '', 
           tabBarIcon: ({ color, size }) => (
             <Icon name="home" color={color} size={size} />
           ),
@@ -32,7 +32,7 @@ const BottomTabs = () => {
         name={NavigationString.Cart}
         component={Cart} 
          options={{
-          title: 'Cart',
+         tabBarLabel: '',
           tabBarIcon: ({ color, size }) => (
             <Icon name="shopping-cart" color={color} size={size} />
           ),
@@ -42,7 +42,8 @@ const BottomTabs = () => {
         name={NavigationString.wishlist}
         component={wishlist} 
          options={{
-          title: 'WishList',
+         tabBarLabel: '',
+
           tabBarIcon: ({ color, size }) => (
             <Icon name="favorite" color={color} size={size} />
           ),

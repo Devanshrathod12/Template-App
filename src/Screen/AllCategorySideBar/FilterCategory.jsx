@@ -85,7 +85,11 @@ const FilterCategory = ({ navigation }) => {
           id: p.id,
           brand: p.brand_name.replace(/['"]/g, ''),
           name: p.product_name.replace(/['"]/g, ''),
-          image: `${BASE_URL}${p.image}`,
+          
+          image: (p.images && p.images.length > 0 && p.images[0] && p.images[0].image)
+            ? `${BASE_URL}${p.images[0].image}`
+            : 'https://via.placeholder.com/150',
+
           price: parseFloat(p.price),
           originalPrice: parseFloat(p.originalPrice || p.price * 1.4),
           rating: p.rating || 4.5,
@@ -99,12 +103,13 @@ const FilterCategory = ({ navigation }) => {
       }
       await fetchCartState();
     } catch (err) {
-      console.error('Failed to fetch initial data:', err);
+      console.error('Failed to fetch or format initial data:', err); 
       setError('Could not load data. Please try again.');
     } finally {
       setLoading(false);
     }
   };
+
 
   useEffect(() => {
     if (isFocused) {
@@ -272,11 +277,11 @@ const FilterCategory = ({ navigation }) => {
               <View style={styles.card}>
                 <TouchableOpacity
                   onPress={() =>
-                    navigation.navigate('ProductList', { product: item })
+                    navigation.navigate('ProductList', { productId: item.id })
                   }
                   activeOpacity={0.9}
                 >
-                  <Image source={{ uri: item.image }} style={styles.image} />
+                  <Image source={ {uri: item.image }} style={styles.image} />
                   <TouchableOpacity
                     onPress={() => toggleLike(item.id)}
                     style={styles.wishlistButton}
@@ -461,6 +466,7 @@ const FilterCategory = ({ navigation }) => {
   );
 };
 
+// Styles are unchanged
 const styles = StyleSheet.create({
   loaderContainer: {
     flex: 1,
@@ -497,9 +503,9 @@ const styles = StyleSheet.create({
   },
   image: {
     width: '100%',
-    height: 120,
+    height: 140,
     resizeMode: 'contain',
-    backgroundColor: '#F7F7F7',
+    backgroundColor: colors.WhiteBackgroudcolor,
     borderTopLeftRadius: 12,
     borderTopRightRadius: 12,
   },

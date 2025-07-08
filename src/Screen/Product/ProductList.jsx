@@ -5,11 +5,13 @@ import {
   StyleSheet,
   Image,
   TouchableOpacity,
-  ScrollView,
+  ScrollView, // Still needed for the main screen scroll
   SafeAreaView,
   Alert,
   StatusBar,
   ActivityIndicator,
+  Dimensions,
+  FlatList, // ✅ FlatList ko import karein
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Feather';
 import AntIcon from 'react-native-vector-icons/AntDesign';
@@ -19,53 +21,67 @@ import { useApi } from '../../Context/ApiContext';
 import { showMessage } from 'react-native-flash-message';
 
 const BASE_URL = 'https://accounts-1.onrender.com';
+const { width } = Dimensions.get('window');
 
-const ProductList = ({ navigation }) => {
+const ProductList = ({ route, navigation }) => {
+  const { productId } = route.params;
+
   const [quantity, setQuantity] = useState(1);
   const [like, setLike] = useState(false);
   const [productData, setProductData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [currentIndex, setCurrentIndex] = useState(0);
 
   const { getProductsData } = useApi();
 
   useEffect(() => {
-    fetchProduct();
-  }, []);
+    if (productId) {
+      fetchProduct();
+    }
+  }, [productId]);
 
   const fetchProduct = async () => {
     setLoading(true);
+    setProductData(null);
     try {
       const res = await getProductsData();
 
-      if (res && Array.isArray(res) && res.length > 0) {
-        const apiProduct = res[0];
+      if (res && Array.isArray(res)) {
+        const apiProduct = res.find(p => p.id === productId);
 
-        const formattedProduct = {
-          id: apiProduct.id,
-          brand: apiProduct.brand_name.replace(/['"]/g, ''),
-          name: apiProduct.product_name.replace(/['"]/g, ''),
-          modelNo: apiProduct.product_id,
-          image: `${BASE_URL}${apiProduct.image}`,
-          price: parseFloat(apiProduct.price),
-          originalPrice: parseFloat(
-            apiProduct.originalPrice || apiProduct.price * 1.4,
-          ),
-          rating: apiProduct.rating || 4.5,
-          reviewCount: apiProduct.reviewCount || 152,
-          offer: apiProduct.offer || '30% Off',
-          description: apiProduct.description,
-          stock: parseInt(apiProduct.quantity, 10),
-          specifications: Object.keys(apiProduct.specification).map(key => ({
-            title: key
-              .replace(/_/g, ' ')
-              .replace(/\b\w/g, l => l.toUpperCase()),
-            value: apiProduct.specification[key],
-          })),
-        };
+        if (apiProduct) {
+          const formattedProduct = {
+            id: apiProduct.id,
+            brand: apiProduct.brand_name.replace(/['"]/g, ''),
+            name: apiProduct.product_name.replace(/['"]/g, ''),
+            modelNo: apiProduct.product_id,
+            image: `${BASE_URL}${apiProduct.images[0].image}`,
+            images: apiProduct.images.map(img => `${BASE_URL}${img.image}`),
+            price: parseFloat(apiProduct.price),
+            originalPrice: parseFloat(
+              apiProduct.originalPrice || apiProduct.price * 1.4,
+            ),
+            rating: apiProduct.rating || 4.5,
+            reviewCount: apiProduct.reviewCount || 152,
+            offer: apiProduct.offer || '30% Off',
+            description: apiProduct.description,
+            stock: parseInt(apiProduct.quantity, 10),
+            specifications: Object.keys(apiProduct.specification).map(key => ({
+              title: key
+                .replace(/_/g, ' ')
+                .replace(/\b\w/g, l => l.toUpperCase()),
+              value: apiProduct.specification[key],
+            })),
+          };
 
-        setProductData(formattedProduct);
+          setProductData(formattedProduct);
+        } else {
+          console.error('Product with ID not found:', productId);
+          Alert.alert('Error', 'Product details could not be found.');
+        }
       } else {
         console.log('No products received from API.');
+        Alert.alert('Error', 'Could not load product details.');
       }
     } catch (err) {
       console.log('Failed to fetch or format product:', err);
@@ -74,23 +90,28 @@ const ProductList = ({ navigation }) => {
       setLoading(false);
     }
   };
+  
+  // onScroll event handler ko update karein FlatList ke liye
+  const handleScroll = event => {
+    const index = Math.round(event.nativeEvent.contentOffset.x / width);
+    setCurrentIndex(index);
+  };
 
   const handlelike = () => setLike(!like);
 
-const incrementQuantity = () => {
-  if (quantity >= productData.stock) {
-    showMessage({
-      message: 'Stock Limit Reached',
-      description:`Oops! You can only select up to ${productData.stock} items available in stock.`,
-      type: 'danger',
-      icon: 'auto',
-      duration: 3000,
-    });
-    return;
-  }
-
-  setQuantity(prev => prev + 1);
-};
+  const incrementQuantity = () => {
+    if (quantity >= productData.stock) {
+      showMessage({
+        message: 'Stock Limit Reached',
+        description: `Oops! You can only select up to ${productData.stock} items available in stock.`,
+        type: 'danger',
+        icon: 'auto',
+        duration: 3000,
+      });
+      return;
+    }
+    setQuantity(prev => prev + 1);
+  };
 
   const decrementQuantity = () => quantity > 1 && setQuantity(prev => prev - 1);
 
@@ -110,10 +131,7 @@ const incrementQuantity = () => {
       Alert.alert('Out of Stock', 'This item is currently not available.');
       return;
     }
-    Alert.alert(
-      'Next Step',
-      'Proceeding to lens selection for your new frames!',
-    );
+    Alert.alert('Next Step', 'Proceeding to lens selection for your new frames!');
   };
 
   if (loading) {
@@ -127,7 +145,7 @@ const incrementQuantity = () => {
   if (!productData) {
     return (
       <SafeAreaView style={styles.loaderContainer}>
-        <Text>Could not load product. Please try again.</Text>
+        <Text>Could not load product. Please go back and try again.</Text>
       </SafeAreaView>
     );
   }
@@ -157,17 +175,36 @@ const incrementQuantity = () => {
       </View>
 
       <ScrollView>
-        <View style={styles.imageContainer}>
-          <Image
-            source={{ uri: productData.image }}
-            style={styles.productImage}
+        {/* ✅✅✅ UPDATED IMAGE SLIDER USING FLATLIST ✅✅✅ */}
+        <View style={styles.sliderContainer}>
+          <FlatList
+            data={productData.images}
+            keyExtractor={(item, index) => `slide-${index}-${item}`}
+            renderItem={({ item }) => (
+              <Image source={{ uri: item }} style={styles.sliderImage} />
+            )}
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            onScroll={handleScroll}
+            scrollEventThrottle={16}
           />
+          <View style={styles.pagination}>
+            {productData.images.map((_, index) => (
+              <View
+                key={index}
+                style={[
+                  styles.dot,
+                  currentIndex === index && styles.activeDot,
+                ]}
+              />
+            ))}
+          </View>
         </View>
+
         <View style={styles.infoContainer}>
           <Text style={styles.productBrand}>{productData.brand}</Text>
           <Text style={styles.productName}>{productData.name}</Text>
-
-          {/* ✅ सुधार 3: स्टॉक दिखाने के लिए UI */}
           <View style={styles.productSubline}>
             <Text style={styles.productModel}>{productData.modelNo}</Text>
             {isOutOfStock ? (
@@ -176,13 +213,10 @@ const incrementQuantity = () => {
               </View>
             ) : (
               <View style={[styles.stockBadge, styles.inStockBadge]}>
-                <Text style={styles.stockText}>
-                  In Stock: {productData.stock}
-                </Text>
+                <Text style={styles.stockText}>In Stock: {productData.stock}</Text>
               </View>
             )}
           </View>
-
           <View style={styles.ratingContainer}>
             <View style={styles.starContainer}>
               {[1, 2, 3, 4, 5].map(star => (
@@ -191,9 +225,6 @@ const incrementQuantity = () => {
                   name="star"
                   size={scale(16)}
                   color={productData.rating >= star ? '#FFC107' : '#E0E0E0'}
-                  style={{
-                    fill: productData.rating >= star ? '#FFC107' : 'none',
-                  }}
                 />
               ))}
             </View>
@@ -251,6 +282,7 @@ const incrementQuantity = () => {
           </View>
         </View>
       </ScrollView>
+
       <View style={styles.footer}>
         <TouchableOpacity
           style={styles.addToCartButton}
@@ -282,6 +314,38 @@ const incrementQuantity = () => {
 };
 
 const styles = StyleSheet.create({
+  sliderContainer: {
+    width: '100%',
+    height: verticalScale(250),
+    backgroundColor: colors.WhiteBackgroudcolor,
+  },
+  sliderImage: {
+    width: width, 
+    height: '100%',
+    resizeMode: 'contain',
+  },
+  pagination: {
+    position: 'absolute',
+    bottom: verticalScale(12),
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  dot: {
+    height: scale(8),
+    width: scale(8),
+    borderRadius: scale(4),
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    marginHorizontal: scale(4),
+  },
+  activeDot: {
+    backgroundColor: colors.ProductDetailsButton,
+    width: scale(10),
+    height: scale(10),
+    borderRadius: scale(5),
+  },
   container: { flex: 1, backgroundColor: colors.WhiteBackgroudcolor },
   loaderContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   header: {
@@ -292,6 +356,7 @@ const styles = StyleSheet.create({
     paddingVertical: verticalScale(15),
     borderBottomWidth: 1,
     borderBottomColor: '#F0F0F0',
+    backgroundColor: '#FFF'
   },
   headerTitle: {
     fontSize: moderateScale(18),
@@ -299,21 +364,20 @@ const styles = StyleSheet.create({
     color: '#333',
   },
   headerIcons: { flexDirection: 'row' },
-  imageContainer: { alignItems: 'center', padding: scale(10) },
-  productImage: {
-    width: '95%',
-    height: verticalScale(220),
-    resizeMode: 'contain',
-  },
   infoContainer: {
     paddingHorizontal: scale(20),
     paddingBottom: verticalScale(20),
+    backgroundColor: '#FFF',
+    borderTopLeftRadius: scale(20),
+    borderTopRightRadius: scale(20),
+    marginTop: verticalScale(-20),
   },
   productBrand: {
     fontSize: moderateScale(16),
     color: '#007BFF',
     fontWeight: '500',
     marginBottom: verticalScale(4),
+    paddingTop: verticalScale(20),
   },
   productName: {
     fontSize: moderateScale(24),
@@ -321,7 +385,6 @@ const styles = StyleSheet.create({
     color: '#212529',
     marginBottom: verticalScale(4),
   },
-  // ✅ नए और बदले हुए स्टाइल्स
   productSubline: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -330,9 +393,9 @@ const styles = StyleSheet.create({
   },
   productModel: { fontSize: moderateScale(14), color: '#6c757d' },
   stockBadge: {
-    paddingHorizontal: scale(8),
-    paddingVertical: verticalScale(3),
-    borderRadius: scale(5),
+    paddingHorizontal: scale(10),
+    paddingVertical: verticalScale(4),
+    borderRadius: scale(6),
   },
   inStockBadge: { backgroundColor: '#e9f7ec' },
   outOfStockBadge: { backgroundColor: '#fbe9e7' },
@@ -342,7 +405,6 @@ const styles = StyleSheet.create({
     color: '#28a745',
   },
   outOfStockText: { color: '#d32f2f' },
-  //
   ratingContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -375,6 +437,7 @@ const styles = StyleSheet.create({
     paddingVertical: verticalScale(4),
     borderRadius: scale(6),
     marginLeft: scale(15),
+    overflow: 'hidden'
   },
   quantitySelectorContainer: {
     flexDirection: 'row',

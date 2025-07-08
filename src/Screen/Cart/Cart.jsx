@@ -28,6 +28,7 @@ const Cart = () => {
     setLoading(true);
     try {
       const response = await GetCartData();
+      console.log(response)
       if (response && !response.error && Array.isArray(response)) {
         setCartItems(response);
       } else {
