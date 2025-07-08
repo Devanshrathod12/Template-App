@@ -71,7 +71,7 @@ export const ApiProvider = ({ children }) => {
     console.log("✅ ReSendOtp success:", response.data.message);
     return response.data;
   } catch (error) {
-    console.log('❌ ReSendOtp error:', error.response?.data || error.message);
+    console.log('ReSendOtp error:', error.response?.data || error.message);
     throw error;
   }
 };
@@ -105,9 +105,9 @@ export const ApiProvider = ({ children }) => {
   try {
     const token = await AsyncStorage.getItem('authToken');
 
-    const response = await axios.get(`${URL}product/`, {
+    const response = await axios.get(`${URL}product/`,{
       headers: {
-        Authorization: `Bearer ${token}`, // ⬅️ token set
+        Authorization: `Bearer ${token}`,
       },
     });
 
@@ -122,7 +122,7 @@ export const ApiProvider = ({ children }) => {
 const AddToCart = async (addcart) => {
   try {
     const token = await AsyncStorage.getItem('authToken');
-    const response = await axios.post(`${URL}Cart/`, addcart, {
+    const response = await axios.post(`${URL}cart/add/`, addcart, {
       headers: {
         Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json',
@@ -142,8 +142,60 @@ const AddToCart = async (addcart) => {
   }
 };
 
+// remove cart wali api hai 
+const Removefromcart = async (productId, quantity) => {
+  try {
+    const token = await AsyncStorage.getItem('authToken'); 
+    const response = await axios.delete(`${URL}cart/delete/${productId}/`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      data: {
+        quantity: quantity,
+      },
+    });
+    
+    console.log('item Remove', response.data); 
+    return response.data;
+  } catch (error) {
+    console.log(
+      'Error removing from cart:',
+      error.response?.data || error.message
+    );
+    return {
+      error: true,
+      message:
+        error.response?.data?.detail ||
+        error.message ||
+        'Unexpected error',
+    };
+  }
+};
+
+
+
+// get data frome 
+const GetCartData = async () => {
+  try {
+    const token = await AsyncStorage.getItem('authToken');
+    const response = await axios.get(`${URL}cart/`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.log('Error fetching cart data:', error.response?.data || error.message);
+    return {
+      error: true,
+      message: error.response?.data?.detail || error.message || 'Unexpected error',
+    };
+  }
+};
+
   return (
-    <ApiContext.Provider value={{ SignupUser , Login , SendOtp  , VerifyOtp , ResetPassword , ReSendOtp , getProductsData , AddToCart}}>
+    <ApiContext.Provider value={{ SignupUser , Login , SendOtp  , VerifyOtp , ResetPassword , ReSendOtp , getProductsData , AddToCart , GetCartData , Removefromcart}}>
       {children}
     </ApiContext.Provider>
   );

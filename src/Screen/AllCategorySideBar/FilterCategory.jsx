@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react'; // ✅ useEffect जोड़ा गया
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -11,18 +11,19 @@ import {
   Animated,
   ScrollView,
   TouchableWithoutFeedback,
-  ActivityIndicator, // ✅ जोड़ा गया
+  ActivityIndicator,
+  Easing,
 } from 'react-native';
 import { showMessage } from 'react-native-flash-message';
 import Icon from 'react-native-vector-icons/Feather';
 import AntIcon from 'react-native-vector-icons/AntDesign';
-// import { useSelector } from 'react-redux'; // ❌ Redux हटाया गया
-import { useApi } from '../../Context/ApiContext'; // ✅ useApi इम्पोर्ट किया गया
+import { useIsFocused } from '@react-navigation/native';
+
+import { useApi } from '../../Context/ApiContext';
 import colors from '../../styles/colors';
 
-const BASE_URL = 'https://accounts-1.onrender.com'; // ✅ इमेज URL के लिए
+const BASE_URL = 'https://accounts-1.onrender.com';
 
-// --- फिल्टर डेटा (कोई बदलाव नहीं) ---
 const genderFilters = [
   { id: 'men', title: 'Men' },
   { id: 'women', title: 'Women' },
@@ -32,15 +33,12 @@ const shapeFilters = [
   { id: 'rectangle', title: 'Rectangle' },
   { id: 'round', title: 'Round' },
   { id: 'square', title: 'Square' },
-  // ... बाकी शेप्स
 ];
 const priceFilters = [
   { id: 'p1', title: 'Under ₹500' },
   { id: 'p2', title: '₹500 – ₹999' },
   { id: 'p3', title: '₹1000 – ₹1499' },
-  // ... बाकी प्राइस रेंज
 ];
-// ---
 
 const FilterCategory = ({ navigation }) => {
   const [allProducts, setAllProducts] = useState([]);
@@ -56,101 +54,130 @@ const FilterCategory = ({ navigation }) => {
   const [selectedShape, setSelectedShape] = useState(null);
   const [selectedPrice, setSelectedPrice] = useState(null);
 
-  const { getProductsData, AddToCart } = useApi();
+  const { getProductsData, AddToCart, Removefromcart, GetCartData } = useApi();
+  const isFocused = useIsFocused();
+
+  const fetchCartState = async () => {
+    try {
+      const cartRes = await GetCartData();
+      if (cartRes && !cartRes.error && Array.isArray(cartRes)) {
+        const newCartMap = cartRes.reduce((acc, cartItem) => {
+          const productId = cartItem.product?.id || cartItem.product_id;
+          if (productId) {
+            acc[productId] = cartItem.id;
+          }
+          return acc;
+        }, {});
+        setCartMap(newCartMap);
+      }
+    } catch (e) {
+      console.error("Failed to refresh cart state:", e);
+    }
+  };
+  
+  const fetchPageData = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const productsRes = await getProductsData();
+      if (productsRes && Array.isArray(productsRes)) {
+        const formattedProducts = productsRes.map((p, index) => ({
+          id: p.id,
+          brand: p.brand_name.replace(/['"]/g, ''),
+          name: p.product_name.replace(/['"]/g, ''),
+          image: `${BASE_URL}${p.image}`,
+          price: parseFloat(p.price),
+          originalPrice: parseFloat(p.originalPrice || p.price * 1.4),
+          rating: p.rating || 4.5,
+          gender:
+            index % 3 === 0 ? 'men' : index % 3 === 1 ? 'women' : 'kids',
+          shape: shapeFilters[index % shapeFilters.length].id,
+        }));
+        setAllProducts(formattedProducts);
+      } else {
+        setError('No products found or invalid data format.');
+      }
+      await fetchCartState();
+    } catch (err) {
+      console.error('Failed to fetch initial data:', err);
+      setError('Could not load data. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchProductsFromApi = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const res = await getProductsData();
-        if (res && Array.isArray(res)) {
-          // API डेटा को ऐप के फॉर्मेट में बदलें
-          const formattedProducts = res.map((p, index) => ({
-            id: p.id,
-            brand: p.brand_name.replace(/['"]/g, ''),
-            name: p.product_name.replace(/['"]/g, ''),
-            image: `${BASE_URL}${p.image}`,
-            price: parseFloat(p.price),
-            originalPrice: parseFloat(p.originalPrice || p.price * 1.4),
-            rating: p.rating || 4.5,
-            // महत्वपूर्ण: API में gender और shape नहीं है, इसलिए हम अभी के लिए डमी डेटा जोड़ रहे हैं
-            // असली सिनेरियो में यह डेटा API से आना चाहिए।
-            gender:
-              index % 3 === 0 ? 'men' : index % 3 === 1 ? 'women' : 'kids',
-            shape: shapeFilters[index % shapeFilters.length].id,
-          }));
-          setAllProducts(formattedProducts);
-        } else {
-          setError('No products found or invalid data format.');
-        }
-      } catch (err) {
-        console.error('Failed to fetch products:', err);
-        setError('Could not load products. Please try again.');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchProductsFromApi();
-  }, []);
+    if (isFocused) {
+      fetchPageData();
+    }
+  }, [isFocused]);
 
   const handleAddToCart = async (product) => {
-  try {
-  
-    const payload = {
-      product: product.id,
-      quantity: 1,
-    };
-
-    console.log('Sending to API:', payload);
-
-    const response = await AddToCart(payload); 
-
-    console.log('Add to Cart Response:', response);
-    if (response?.message === 'Product added to cart') {
-      const updatedMap = { ...cartMap, [product.id]: true };
+    try {
+      const payload = { product_id: product.id, quantity: 1 };
+      const response = await AddToCart(payload);
+      
+      const updatedMap = { ...cartMap, [response.product_id]: response.id };
       setCartMap(updatedMap);
-
+      
       showMessage({
         message: 'Added to Cart',
-        description: `${product.name} has been added to your cart.`,
+        description: `${product.name} has been added.`,
         type: 'success',
         icon: 'success',
       });
-    } 
-    else if (response?.error) {
+    } catch (error) {
+      if (error.response && error.response.status === 400) {
+        showMessage({
+          message: 'Already in Cart',
+          description: `${product.name} is already in your cart.`,
+          type: 'info',
+        });
+        await fetchCartState(); 
+      } else {
+        console.error('Error adding to cart:', error);
+        showMessage({
+          message: 'Error',
+          description: 'Could not add item. Please try again.',
+          type: 'danger',
+        });
+      }
+    }
+  };
+
+  const handleRemoveFromCart = async (product) => {
+    const cartItemId = cartMap[product.id];
+    if (!cartItemId) {
+      await fetchCartState();
+      return;
+    }
+
+    try {
+      await Removefromcart(cartItemId);
+      const updatedMap = { ...cartMap };
+      delete updatedMap[product.id];
+      setCartMap(updatedMap);
       showMessage({
-        message: 'Could not add to cart',
-        description: response.message || 'Something went wrong',
-        type: 'danger',
+        message: 'Removed From Cart',
+        description: `${product.name} has been removed.`,
+        type: 'success',
+        icon: 'success',
       });
-    }   
-    else {
+    } catch (err) {
+      console.error('Error removing from cart:', err);
       showMessage({
-        message: 'Unexpected Response',
-        description: 'Cart API did not return a proper message.',
+        message: 'Error Removing Item',
+        description: 'Could not remove the item.',
         type: 'danger',
       });
     }
-  } catch (error) {
-    console.error('Error adding to cart:', error);
-    showMessage({
-      message: 'Error',
-      description: 'An error occurred while adding item to the cart.',
-      type: 'danger',
-    });
-  }
-};
-
+  };
 
   const getFilteredProducts = () => {
     if (loading || error) return [];
-
     return allProducts.filter(product => {
       const genderMatch = !selectedGender || product.gender === selectedGender;
       const shapeMatch = !selectedShape || product.shape === selectedShape;
-
       const priceMatch =
         !selectedPrice ||
         (selectedPrice === 'p1' && product.price < 500) ||
@@ -159,18 +186,7 @@ const FilterCategory = ({ navigation }) => {
           product.price <= 999) ||
         (selectedPrice === 'p3' &&
           product.price >= 1000 &&
-          product.price <= 1499) ||
-        (selectedPrice === 'p4' &&
-          product.price >= 1500 &&
-          product.price <= 1999) ||
-        (selectedPrice === 'p5' &&
-          product.price >= 2000 &&
-          product.price <= 2999) ||
-        (selectedPrice === 'p6' &&
-          product.price >= 3000 &&
-          product.price <= 4999) ||
-        (selectedPrice === 'p7' && product.price >= 5000);
-
+          product.price <= 1499);
       return genderMatch && shapeMatch && priceMatch;
     });
   };
@@ -182,7 +198,8 @@ const FilterCategory = ({ navigation }) => {
     Animated.timing(sidebarAnim, {
       toValue,
       duration: 300,
-      useNativeDriver: false,
+      useNativeDriver: true,
+      easing: Easing.out(Easing.ease),
     }).start();
     setSidebarVisible(!sidebarVisible);
   };
@@ -220,8 +237,6 @@ const FilterCategory = ({ navigation }) => {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFF" />
-
-      {/* --- हेडर (कोई बदलाव नहीं) --- */}
       <View style={styles.header}>
         <TouchableOpacity onPress={toggleSidebar}>
           <Icon name="menu" size={24} color="#333" />
@@ -229,12 +244,14 @@ const FilterCategory = ({ navigation }) => {
         <Text style={styles.headerTitle}>Eyeglasses</Text>
         <View style={styles.headerIcons}>
           <Icon name="search" size={22} color="#333" />
-          <Icon
-            name="shopping-bag"
-            size={22}
-            color="#333"
-            style={{ marginLeft: 20 }}
-          />
+          <TouchableOpacity onPress={() => navigation.navigate('Cart')}>
+            <Icon
+              name="shopping-bag"
+              size={22}
+              color="#333"
+              style={{ marginLeft: 20 }}
+            />
+          </TouchableOpacity>
         </View>
       </View>
 
@@ -249,7 +266,7 @@ const FilterCategory = ({ navigation }) => {
           numColumns={2}
           contentContainerStyle={styles.listContainer}
           renderItem={({ item }) => {
-            const isAddedToCart = cartMap[item.id];
+            const isAddedToCart = !!cartMap[item.id];
             const isLiked = likedItems[item.id];
             return (
               <View style={styles.card}>
@@ -302,27 +319,24 @@ const FilterCategory = ({ navigation }) => {
                       </Text>
                     )}
                   </View>
-                  <TouchableOpacity
-                    style={[
-                      styles.addButton,
-                      isAddedToCart && styles.addedButton,
-                    ]}
-                    onPress={() => {
-                      if (!isAddedToCart) {
-                        handleAddToCart(item);
-                      }
-                    }}
-                    disabled={isAddedToCart}
-                  >
-                    <Text
-                      style={[
-                        styles.addButtonText,
-                        isAddedToCart && styles.addedButtonText,
-                      ]}
+
+                  {isAddedToCart ? (
+                    <TouchableOpacity
+                      style={styles.removeButton}
+                      onPress={() => handleRemoveFromCart(item)}
                     >
-                      {isAddedToCart ? 'Added to Cart' : 'Add to Cart'}
-                    </Text>
-                  </TouchableOpacity>
+                      <Text style={styles.removeButtonText}>
+                        Remove from Cart
+                      </Text>
+                    </TouchableOpacity>
+                  ) : (
+                    <TouchableOpacity
+                      style={styles.addButton}
+                      onPress={() => handleAddToCart(item)}
+                    >
+                      <Text style={styles.addButtonText}>Add to Cart</Text>
+                    </TouchableOpacity>
+                  )}
                 </View>
               </View>
             );
@@ -336,7 +350,10 @@ const FilterCategory = ({ navigation }) => {
       )}
 
       <Animated.View
-        style={[styles.sidebar, { transform: [{ translateX: sidebarAnim }] }]}
+        style={[
+          styles.sidebar,
+          { transform: [{ translateX: sidebarAnim }] },
+        ]}
       >
         <View style={styles.sidebarHeader}>
           <Text style={styles.sidebarTitle}>Filters</Text>
@@ -357,7 +374,7 @@ const FilterCategory = ({ navigation }) => {
                   ]}
                   onPress={() => {
                     setSelectedGender(prev =>
-                      prev === item.id ? null : item.id,
+                      prev === item.id ? null : item.id
                     );
                   }}
                 >
@@ -385,7 +402,7 @@ const FilterCategory = ({ navigation }) => {
                   ]}
                   onPress={() => {
                     setSelectedShape(prev =>
-                      prev === item.id ? null : item.id,
+                      prev === item.id ? null : item.id
                     );
                   }}
                 >
@@ -413,7 +430,7 @@ const FilterCategory = ({ navigation }) => {
                   ]}
                   onPress={() => {
                     setSelectedPrice(prev =>
-                      prev === item.id ? null : item.id,
+                      prev === item.id ? null : item.id
                     );
                   }}
                 >
@@ -444,7 +461,6 @@ const FilterCategory = ({ navigation }) => {
   );
 };
 
-// ✅ नए स्टाइल्स जोड़े गए
 const styles = StyleSheet.create({
   loaderContainer: {
     flex: 1,
@@ -466,7 +482,7 @@ const styles = StyleSheet.create({
     borderBottomColor: '#F0F0F0',
   },
   headerTitle: { fontSize: 18, fontWeight: '600', color: '#333' },
-  headerIcons: { flexDirection: 'row' },
+  headerIcons: { flexDirection: 'row', alignItems: 'center' },
   listContainer: { padding: 8 },
   card: {
     flex: 1,
@@ -524,6 +540,20 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   addButtonText: { color: '#007BFF', fontWeight: 'bold', fontSize: 14 },
+  removeButton: {
+    backgroundColor: '#FFEBEE',
+    borderColor: '#E53935',
+    borderWidth: 1,
+    paddingVertical: 8,
+    borderRadius: 8,
+    alignItems: 'center',
+    width: '100%',
+  },
+  removeButtonText: {
+    color: '#E53935',
+    fontWeight: 'bold',
+    fontSize: 14,
+  },
   overlay: {
     position: 'absolute',
     top: 0,
@@ -601,29 +631,6 @@ const styles = StyleSheet.create({
     marginLeft: 5,
   },
   applyButtonText: { color: '#fff', fontWeight: 'bold' },
-  addButton: {
-    backgroundColor: '#E7F2FF',
-    borderColor: '#007BFF',
-    borderWidth: 1,
-    paddingVertical: 8,
-    borderRadius: 8,
-    alignItems: 'center',
-    width: '100%',
-  },
-  addButtonText: {
-    color: '#007BFF',
-    fontWeight: 'bold',
-    fontSize: 14,
-  },
-
-  // ✅ Add these two:
-  addedButton: {
-    backgroundColor: '#C8E6C9', // light green
-    borderColor: '#388E3C', // green
-  },
-  addedButtonText: {
-    color: '#388E3C', // green text
-  },
 });
 
 export default FilterCategory;
