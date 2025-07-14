@@ -1,6 +1,9 @@
 import { Cart, FilterCategory, ForgetPass, HomeScreen, loder, OtpVerify, ResetPassword, SignIn, wishlist } from "../Screen";
 import AuthGate from "../Screen/Auth/AuthGate";
+import DeliveryAddress from "../Screen/DeliveryAddress/DeliveryAddress";
+import SeeOrder from "../Screen/GetOrders/SeeOrder";
 import { Signup } from "../Screen/Login/Signup";
+import Checkout from "../Screen/PlaseOrder/Checkout";
 import ProductList from "../Screen/Product/ProductList";
 
 export default {
@@ -15,5 +18,8 @@ export default {
      Cart:"Cart",
      ProductList:"ProductList",
      FilterCategory:"FilterCategory",
-     wishlist:"wishlist"
+     wishlist:"wishlist",
+     DeliveryAddress:"DeliveryAddress",
+     Checkout:"Checkout",
+     SeeOrder:"SeeOrder"
 }

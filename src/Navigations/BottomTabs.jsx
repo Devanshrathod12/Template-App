@@ -5,6 +5,7 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 import NavigationString from './NavigationString';
 import HomeStack from './HomeStack'; 
 import { Screen } from 'react-native-screens';
+import CartStack from './CartStack';
 
 
 const Tab = createBottomTabNavigator();
@@ -29,8 +30,8 @@ const BottomTabs = () => {
         }}
       />
       <Tab.Screen
-        name={NavigationString.Cart}
-        component={Cart} 
+        name="Cart"
+        component={CartStack} 
          options={{
          tabBarLabel: '',
           tabBarIcon: ({ color, size }) => (

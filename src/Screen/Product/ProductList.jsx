@@ -293,7 +293,7 @@ const ProductList = ({ route, navigation }) => {
             </TouchableOpacity>
             <TouchableOpacity
                 style={[styles.selectLensesButton, isOutOfStock && { backgroundColor: '#ccc' }]}
-                onPress={() => Alert.alert('Next Step', 'Proceed to lens selection!')}
+                 onPress={() => navigation.navigate('Cart', { product: productData })}
                 disabled={isOutOfStock}
             >
                 <Text style={styles.selectLensesButtonText}>Buy Now</Text>

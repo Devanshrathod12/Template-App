@@ -27,7 +27,7 @@ const Header = () => {
             <Icon name="log-out" size={scale(24)} color="#e63946" />
           </TouchableOpacity>
 
-          <TouchableOpacity onPress={() => navigation.navigate('Cart')}>
+          <TouchableOpacity onPress={() => navigation.navigate("SeeOrder")}>
             <Icon
               name="shopping-bag"
               size={scale(24)}

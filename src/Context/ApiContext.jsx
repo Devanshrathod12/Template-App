@@ -242,6 +242,96 @@ export const ApiProvider = ({ children }) => {
     }
   };
 
+  const AddAddress = async (addressData) => {
+    try {
+      const token = await AsyncStorage.getItem('authToken');
+      const response = await axios.post(`${URL}address/`, addressData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      console.log('Address Saved:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error(
+        'Error saving address:',
+        error.response?.data || error.message,
+      );
+      return {
+        error: true,
+        message:
+          error.response?.data?.detail || error.message || 'Failed to save address',
+      };
+    }
+  };
+
+  const GetAddresses = async () => {
+    try {
+      const token = await AsyncStorage.getItem('authToken');
+      const response = await axios.get(`${URL}address/list/`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      return response.data;
+    } catch (error) {
+      console.error(
+        'Error fetching addresses:',
+        error.response?.data || error.message,
+      );
+      return {
+        error: true,
+        message: error.response?.data?.detail || 'Failed to fetch addresses',
+      };
+    }
+  };
+
+   const PlaceOrder = async (orderData) => {
+    try {
+      const token = await AsyncStorage.getItem('authToken');
+      const response = await axios.post(`${URL}order/`, orderData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      console.log('Order Placed Successfully:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error(
+        'Error placing order:',
+        error.response?.data || error.message,
+      );
+      return {
+        error: true,
+        message: error.response?.data?.detail || 'Failed to place order',
+      };
+    }
+  };
+
+   const GetOrders = async () => {
+    try {
+      const token = await AsyncStorage.getItem('authToken');
+      const response = await axios.get(`${URL}orders/list/`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      console.log('Orders fetched successfully:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error(
+        'Error fetching orders:',
+        error.response?.data || error.message,
+      );
+      return {
+        error: true,
+        message: error.response?.data?.detail || 'Failed to fetch orders',
+      };
+    }
+  };
+
   return (
     <ApiContext.Provider
       value={{
@@ -256,6 +346,10 @@ export const ApiProvider = ({ children }) => {
         GetCartData,
         Removefromcart,
         UpdateCartQuantity,
+        AddAddress,
+        GetAddresses,
+        PlaceOrder,
+        GetOrders
       }}
     >
       {children}
