@@ -266,6 +266,7 @@ export const ApiProvider = ({ children }) => {
     }
   };
 
+  // delivery address get krna 
   const GetAddresses = async () => {
     try {
       const token = await AsyncStorage.getItem('authToken');
@@ -287,6 +288,7 @@ export const ApiProvider = ({ children }) => {
     }
   };
 
+  // order ko plased krne ka 
    const PlaceOrder = async (orderData) => {
     try {
       const token = await AsyncStorage.getItem('authToken');
@@ -310,6 +312,8 @@ export const ApiProvider = ({ children }) => {
     }
   };
 
+
+  //order ko get krna
    const GetOrders = async () => {
     try {
       const token = await AsyncStorage.getItem('authToken');
@@ -332,6 +336,34 @@ export const ApiProvider = ({ children }) => {
     }
   };
 
+  // order ko cencel krna 
+   const CancelOrder = async (orderId) => {
+    try {
+      const token = await AsyncStorage.getItem('authToken');
+      // Using PATCH method as per your screenshot
+      const response = await axios.patch(
+        `${URL}order/cncel/${orderId}/`,
+        {}, // Sending an empty body as PATCH might require it
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      console.log('Order Cancelled Successfully:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error(
+        'Error cancelling order:',
+        error.response?.data || error.message
+      );
+      return {
+        error: true,
+        message: error.response?.data?.detail || 'Failed to cancel order',
+      };
+    }
+  };
+
   return (
     <ApiContext.Provider
       value={{
@@ -349,7 +381,8 @@ export const ApiProvider = ({ children }) => {
         AddAddress,
         GetAddresses,
         PlaceOrder,
-        GetOrders
+        GetOrders,
+        CancelOrder
       }}
     >
       {children}
