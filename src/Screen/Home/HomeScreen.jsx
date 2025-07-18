@@ -21,5 +21,4 @@ const HomeScreen = () => {
     </SafeAreaView>
   );
 };
-
 export default HomeScreen;
