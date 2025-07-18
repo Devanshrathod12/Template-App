@@ -15,7 +15,8 @@ const ProductActions = ({ isInCart, isUpdatingCart, onAddToCart, onRemoveFromCar
       >
         {isUpdatingCart ? (
           <ActivityIndicator color={isInCart ? colors.danger : colors.primary} size="small" />
-        ) : (
+        )
+         : (
           <Text style={[ styles.addToCartButtonText, isInCart && styles.removeButtonText ]}>
             {isInCart ? 'Remove To Cart' : 'Add to Cart'}
           </Text>
