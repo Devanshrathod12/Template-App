@@ -1,5 +1,4 @@
- 
- import React from 'react';
+import React from 'react';
 import { StyleSheet, SafeAreaView, StatusBar, ScrollView, View } from 'react-native';
 import colors from '../../styles/colors'; 
 import { scale, verticalScale } from '../../styles/styleconfig'; 
@@ -24,7 +23,7 @@ const ProductList = ({ route, navigation }) => {
     isInCart,
     isOutOfStock,
     quantity,
-    like,
+    isLiked,
     actions,
   } = useProductDetails(productId);
 
@@ -40,7 +39,7 @@ const ProductList = ({ route, navigation }) => {
       <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
       <ProductDetailsHeader
         brand={productData.brand}
-        like={like}
+        isLiked={isLiked}
         onToggleLike={actions.toggleLike}
         onGoBack={() => navigation.goBack()}
         onGoToCart={() => navigation.navigate('Cart')}

@@ -6,7 +6,17 @@ import { useIsFocused } from '@react-navigation/native';
 const BASE_URL = 'https://accounts-3.onrender.com';
 
 const useProductDetails = (productId) => {
-  const { getProductsData, AddToCart, Removefromcart, UpdateCartQuantity, GetCartData } = useApi();
+  const { 
+    getProductsData, 
+    AddToCart, 
+    Removefromcart, 
+    UpdateCartQuantity, 
+    GetCartData,
+    GetFavourites,
+    AddToFavourites,
+    RemoveFromFavourites
+  } = useApi();
+  
   const isFocused = useIsFocused();
 
   const [productData, setProductData] = useState(null);
@@ -14,14 +24,19 @@ const useProductDetails = (productId) => {
   const [cartMap, setCartMap] = useState({});
   const [quantity, setQuantity] = useState(1);
   const [isUpdatingCart, setIsUpdatingCart] = useState(false);
-  const [like, setLike] = useState(false);
+  const [isLiked, setIsLiked] = useState(false);
 
   const debounceTimeout = useRef(null);
 
   const initializePageState = useCallback(async () => {
     setLoading(true);
     try {
-      const [productsRes, cartRes] = await Promise.all([getProductsData(), GetCartData()]);
+      const [productsRes, cartRes, favsRes] = await Promise.all([
+        getProductsData(), 
+        GetCartData(),
+        GetFavourites()
+      ]);
+      
       const apiProduct = productsRes?.find(p => p.id == productId);
       if (!apiProduct) throw new Error('Product not found.');
 
@@ -52,6 +67,11 @@ const useProductDetails = (productId) => {
         if (pId) newCartMap[pId] = item.id;
       });
       setCartMap(newCartMap);
+      
+      if (favsRes && !favsRes.error) {
+          const isFavourite = favsRes.some(fav => fav.product?.id == productId);
+          setIsLiked(isFavourite);
+      }
 
       if (newCartMap[apiProduct.id]) {
         const cartItem = cartItems.find(item => item.id === newCartMap[apiProduct.id]);
@@ -65,7 +85,7 @@ const useProductDetails = (productId) => {
     } finally {
       setLoading(false);
     }
-  }, [productId, getProductsData, GetCartData]);
+  }, [productId, getProductsData, GetCartData, GetFavourites]);
 
   useEffect(() => {
     if (isFocused && productId) {
@@ -73,7 +93,6 @@ const useProductDetails = (productId) => {
     }
   }, [isFocused, productId, initializePageState]);
 
-  // --- Action Handlers ---
   const handleAddToCart = async () => {
     if (!productData || isUpdatingCart) return;
     setIsUpdatingCart(true);
@@ -146,7 +165,29 @@ const useProductDetails = (productId) => {
     if (cartMap[productData.id]) handleUpdateQuantity(newQuantity);
   };
 
-  const toggleLike = () => setLike(prev => !prev);
+  const toggleLike = async () => {
+    const shouldBeLiked = !isLiked;
+    const originalIsLiked = isLiked;
+    setIsLiked(shouldBeLiked);
+
+    try {
+      const response = shouldBeLiked
+        ? await AddToFavourites(productId)
+        : await RemoveFromFavourites(productId);
+
+      if (response && response.error) throw new Error(response.message);
+      
+      showMessage({ 
+        message: shouldBeLiked ? "Added to Favourites" : "Removed from Favourites", 
+        type: shouldBeLiked ? "success" : "info",
+        icon: "success"
+      });
+
+    } catch (err) {
+      setIsLiked(originalIsLiked);
+      showMessage({ message: "Error", description: err.message || 'An error occurred', type: "danger", icon: "danger" });
+    }
+  };
 
   const isInCart = !!cartMap[productData?.id];
   const isOutOfStock = productData?.stock <= 0;
@@ -158,7 +199,7 @@ const useProductDetails = (productId) => {
     isInCart,
     isOutOfStock,
     quantity,
-    like,
+    isLiked,
     actions: {
       handleAddToCart,
       handleRemoveFromCart,

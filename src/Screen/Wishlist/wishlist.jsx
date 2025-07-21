@@ -1,9 +1,13 @@
-import { StyleSheet, Text, View, FlatList, ActivityIndicator, TouchableOpacity, Alert } from 'react-native';
+import { StyleSheet, Text, View, FlatList, ActivityIndicator, TouchableOpacity, Image, SafeAreaView, StatusBar } from 'react-native';
 import React, { useCallback, useState, useEffect, useRef } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { useApi } from "../../Context/ApiContext";
 import colors from '../../styles/colors';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
+import { showMessage } from 'react-native-flash-message';
+import Icon from 'react-native-vector-icons/Feather';
+
+const BASE_URL = 'https://accounts-3.onrender.com';
 
 const placeholderColors = [
   '#a2d2ff', '#bde0fe', '#ffafcc', '#ffc8dd', 
@@ -40,68 +44,92 @@ const Wishlist = ({ navigation }) => {
 
   useFocusEffect(useCallback(() => { fetchWishlist(); }, [fetchWishlist]));
 
-  const handleRemoveFavourite = (itemToRemove) => {
+  const handleRemoveFavourite = async (itemToRemove) => {
     const productId = itemToRemove.product.id;
-    Alert.alert(
-      "Remove from Wishlist",
-      `Are you sure you want to remove "${itemToRemove.product.product_name}"?`,
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Remove",
-          style: "destructive",
-          onPress: async () => {
-            const response = await RemoveFromFavourites(productId);
-            if (isMounted.current) {
-              if (response && !response.error) {
-                setFavourites(currentFavourites =>
-                  currentFavourites.filter(item => item.id !== itemToRemove.id)
-                );
-              } else {
-                Alert.alert("Error", response?.message || "Failed to remove item.");
-              }
-            }
-          },
-        },
-      ]
+    const productName = itemToRemove.product.product_name;
+
+    const originalFavourites = [...favourites];
+    setFavourites(currentFavourites =>
+      currentFavourites.filter(item => item.id !== itemToRemove.id)
     );
+
+    const response = await RemoveFromFavourites(productId);
+
+    if (response && response.error) {
+      if (isMounted.current) {
+        setFavourites(originalFavourites); 
+      }
+      showMessage({
+        message: 'Error',
+        description: response.message || 'Could not remove item.',
+        type: 'danger',
+        icon: 'danger'
+      });
+    } else {
+      showMessage({
+        message: `${productName} removed from wishlist`,
+        type: 'info',
+        icon: 'info'
+      });
+    }
   };
 
-  if (loading) {
+  const renderContent = () => {
+    if (loading) {
+      return (
+        <View style={styles.centerContainer}>
+          <ActivityIndicator size="large" color={colors.primary} />
+        </View>
+      );
+    }
+    if (error) {
+      return (
+        <View style={styles.centerContainer}>
+          <Text style={styles.errorText}>{error}</Text>
+        </View>
+      );
+    }
+    if (favourites.length === 0) {
+      return (
+        <View style={styles.centerContainer}>
+          <Text style={styles.emptyText}>Your wishlist is empty.</Text>
+          <Text style={styles.emptySubText}>Tap the heart on any product to save it here.</Text>
+        </View>
+      );
+    }
     return (
-      <View style={styles.centerContainer}>
-        <ActivityIndicator size="large" color={colors.primary} />
-      </View>
+      <FlatList
+        data={favourites}
+        renderItem={renderWishlistItem}
+        keyExtractor={(item) => item.id.toString()}
+        contentContainerStyle={styles.listContainer}
+      />
     );
-  }
-
-  if (error) {
-    return (
-      <View style={styles.centerContainer}>
-        <Text style={styles.errorText}>{error}</Text>
-      </View>
-    );
-  }
+  };
 
   const renderWishlistItem = ({ item }) => {
     const product = item.product;
     if (!product) return null;
 
-    const colorIndex = product.id % placeholderColors.length;
-    const backgroundColor = placeholderColors[colorIndex];
+    const imageUrl = (product.images && product.images.length > 0 && product.images[0].image)
+      ? `${BASE_URL}${product.images[0].image}`
+      : null;
 
-    const initial = product.product_name ? product.product_name[0].toUpperCase() : '?';
     const brandName = product.brand_name ? product.brand_name.replace(/"/g, '') : '';
     
     return (
       <TouchableOpacity 
         style={styles.productContainer}
-        onPress={() => navigation.navigate('ProductDetail', { productId: product.id })}
+        onPress={() => navigation.navigate('ProductList', { productId: product.id })}
         activeOpacity={0.8}
       >
-        <View style={[styles.imagePlaceholder, { backgroundColor }]}>
-          <Text style={styles.placeholderText}>{initial}</Text>
-        </View>
+        {imageUrl ? (
+          <Image source={{ uri: imageUrl }} style={styles.productImage} />
+        ) : (
+          <View style={[styles.imagePlaceholder, { backgroundColor: placeholderColors[product.id % placeholderColors.length] }]}>
+            <Text style={styles.placeholderText}>{product.product_name ? product.product_name[0].toUpperCase() : '?'}</Text>
+          </View>
+        )}
         
         <View style={styles.productInfo}>
           <Text style={styles.brandText}>{brandName}</Text>
@@ -120,21 +148,17 @@ const Wishlist = ({ navigation }) => {
   };
 
   return (
-    <View style={styles.container}>
-      {favourites.length === 0 && !loading ? (
-        <View style={styles.centerContainer}>
-          <Text style={styles.emptyText}>Your wishlist is empty.</Text>
-          <Text style={styles.emptySubText}>Tap the heart on any product to save it here.</Text>
-        </View>
-      ) : (
-        <FlatList
-          data={favourites}
-          renderItem={renderWishlistItem}
-          keyExtractor={(item) => item.id.toString()}
-          contentContainerStyle={styles.listContainer}
-        />
-      )}
-    </View>
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerButton}>
+          <Icon name="arrow-left" size={24} color="#333" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>My Wishlist</Text>
+        <View style={styles.headerButton} />
+      </View>
+      {renderContent()}
+    </SafeAreaView>
   );
 };
 
@@ -144,6 +168,24 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#f8f9fa',
+    },
+    header: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        backgroundColor: '#fff',
+        borderBottomWidth: 1,
+        borderBottomColor: '#eee',
+    },
+    headerTitle: {
+        fontSize: 20,
+        fontWeight: '600',
+        color: '#111',
+    },
+    headerButton: {
+        width: 30,
     },
     centerContainer: {
         flex: 1,
@@ -182,6 +224,12 @@ const styles = StyleSheet.create({
         elevation: 3,
         overflow: 'hidden',
         height: 110,
+    },
+    productImage: {
+        width: 110,
+        height: '100%',
+        resizeMode: 'contain',
+        backgroundColor: '#f0f0f0'
     },
     imagePlaceholder: {
         width: 110,
