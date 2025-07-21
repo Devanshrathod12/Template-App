@@ -32,6 +32,11 @@ const HomeStack = () => {
         component={Screen.FilterCategory} 
         options={{headerShown:false}}
       />
+      <Stack.Screen 
+        name={NavigationString.AllOrders} 
+        component={Screen.AllOrders} 
+        options={{headerShown:false}}
+      />
     </Stack.Navigator>
   );
 };

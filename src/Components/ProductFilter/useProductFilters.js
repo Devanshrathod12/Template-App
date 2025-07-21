@@ -1,327 +1,210 @@
-// import { useState, useEffect, useCallback } from 'react';
-// import { useApi } from '../../Context/ApiContext';
-// import { useIsFocused } from '@react-navigation/native';
-// import { showMessage } from 'react-native-flash-message';
-
-// const BASE_URL = 'https://accounts-3.onrender.com';
-// const shapeFilters = [ { id: 'rectangle', title: 'Rectangle' }, { id: 'round', title: 'Round' }, { id: 'square', title: 'Square' } ];
-
-// export const useProductFilters = () => {
-//     const { getProductsData, AddToCart, Removefromcart, GetCartData } = useApi();
-//     const isFocused = useIsFocused();
-
-//     const [allProducts, setAllProducts] = useState([]);
-//     const [loading, setLoading] = useState(true);
-//     const [error, setError] = useState(null);
-//     const [cartMap, setCartMap] = useState({});
-//     const [likedItems, setLikedItems] = useState({});
-
-//     // Filter states
-//     const [selectedGender, setSelectedGender] = useState(null);
-//     const [selectedShape, setSelectedShape] = useState(null);
-//     const [selectedPrice, setSelectedPrice] = useState(null);
-
-//     const fetchCartState = useCallback(async () => {
-//         try {
-//             const cartRes = await GetCartData();
-//             if (cartRes && !cartRes.error && Array.isArray(cartRes)) {
-//                 const newCartMap = cartRes.reduce((acc, item) => {
-//                     const pId = item.product?.id || item.product_id;
-//                     if (pId) acc[pId] = item.id;
-//                     return acc;
-//                 }, {});
-//                 setCartMap(newCartMap);
-//             }
-//         } catch (e) {
-//             console.error("Failed to refresh cart state:", e);
-//         }
-//     }, [GetCartData]);
-
-//     const fetchPageData = useCallback(async () => {
-//         setLoading(true);
-//         setError(null);
-//         try {
-//             const productsRes = await getProductsData();
-//             if (productsRes && Array.isArray(productsRes)) {
-//                 const formatted = productsRes.map((p, index) => ({
-//                     id: p.id,
-//                     brand: p.brand_name.replace(/['"]/g, ''),
-//                     name: p.product_name.replace(/['"]/g, ''),
-//                     image: (p.images?.[0]?.image) ? `${BASE_URL}${p.images[0].image}` : 'https://via.placeholder.com/150',
-//                     price: parseFloat(p.price),
-//                     originalPrice: parseFloat(p.originalPrice || p.price * 1.4),
-//                     rating: p.rating || 4.5,
-//                     gender: index % 3 === 0 ? 'men' : index % 3 === 1 ? 'women' : 'kids',
-//                     shape: shapeFilters[index % shapeFilters.length].id,
-//                 }));
-//                 setAllProducts(formatted);
-//             } else {
-//                 setError('No products found.');
-//             }
-//             await fetchCartState();
-//         } catch (err) {
-//             setError('Could not load data. Please try again.');
-//         } finally {
-//             setLoading(false);
-//         }
-//     }, [getProductsData, fetchCartState]);
-
-//     useEffect(() => {
-//         if (isFocused) {
-//             fetchPageData();
-//         }
-//     }, [isFocused, fetchPageData]);
-
-//     const handleAddToCart = async (product) => {
-//         try {
-//             const res = await AddToCart({ product_id: product.id, quantity: 1 });
-//             setCartMap(prev => ({ ...prev, [res.product_id]: res.id }));
-//             showMessage({ message: 'Added to Cart', type: 'success' });
-//         } catch (err) {
-//             showMessage({ message: 'Error adding item', type: 'danger' });
-//             if (err.response?.status === 400) fetchCartState();
-//         }
-//     };
-
-//     const handleRemoveFromCart = async (product) => {
-//         const cartItemId = cartMap[product.id];
-//         if (!cartItemId) return;
-//         try {
-//             await Removefromcart(cartItemId);
-//             setCartMap(prev => {
-//                 const newMap = { ...prev };
-//                 delete newMap[product.id];
-//                 return newMap;
-//             });
-//             showMessage({ message: 'Removed From Cart', type: 'success' });
-//         } catch (err) {
-//             showMessage({ message: 'Error removing item', type: 'danger' });
-//         }
-//     };
-
-//     const toggleLike = (itemId) => {
-//         setLikedItems(prev => ({ ...prev, [itemId]: !prev[itemId] }));
-//     };
-
-//     const clearFilters = () => {
-//         setSelectedGender(null);
-//         setSelectedShape(null);
-//         setSelectedPrice(null);
-//     };
-
-//     const filteredProducts = allProducts.filter(product => {
-//         const genderMatch = !selectedGender || product.gender === selectedGender;
-//         const shapeMatch = !selectedShape || product.shape === selectedShape;
-//         const priceMatch = !selectedPrice ||
-//             (selectedPrice === 'p1' && product.price < 500) ||
-//             (selectedPrice === 'p2' && product.price >= 500 && product.price <= 999) ||
-//             (selectedPrice === 'p3' && product.price >= 1000 && product.price <= 1499);
-//         return genderMatch && shapeMatch && priceMatch;
-//     });
-
-//     return {
-//         loading,
-//         error,
-//         filteredProducts,
-//         cartMap,
-//         likedItems,
-//         filters: { selectedGender, selectedShape, selectedPrice },
-//         actions: {
-//             handleAddToCart,
-//             handleRemoveFromCart,
-//             toggleLike,
-//             clearFilters,
-//             setSelectedGender,
-//             setSelectedShape,
-//             setSelectedPrice,
-//         },
-//     };
-// };
-
 import { useState, useEffect, useCallback } from 'react';
 import { useApi } from '../../Context/ApiContext';
 import { useIsFocused } from '@react-navigation/native';
 import { showMessage } from 'react-native-flash-message';
 
 const BASE_URL = 'https://accounts-3.onrender.com';
-const shapeFilters = [ { id: 'rectangle', title: 'Rectangle' }, { id: 'round', title: 'Round' }, { id: 'square', title: 'Square' } ];
+const shapeFilters = [
+  { id: 'rectangle', title: 'Rectangle' },
+  { id: 'round', title: 'Round' },
+  { id: 'square', title: 'Square' },
+];
 
 export const useProductFilters = () => {
-    // 1. Apne Favourites ke API functions ko yahan import karein
-    const { 
-        getProductsData, 
-        AddToCart, 
-        Removefromcart, 
-        GetCartData,
-        GetFavourites,
-        AddToFavourites,
-        RemoveFromFavourites
-    } = useApi();
-    
-    const isFocused = useIsFocused();
+  // 1. Naya FilterProducts function yahan import karein
+  const {
+    getProductsData,
+    AddToCart,
+    Removefromcart,
+    GetCartData,
+    GetFavourites,
+    AddToFavourites,
+    RemoveFromFavourites,
+    FilterProducts,
+  } = useApi();
 
-    const [allProducts, setAllProducts] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
-    const [cartMap, setCartMap] = useState({});
-    const [likedItems, setLikedItems] = useState({});
+  const isFocused = useIsFocused();
 
-    // Filter states
-    const [selectedGender, setSelectedGender] = useState(null);
-    const [selectedShape, setSelectedShape] = useState(null);
-    const [selectedPrice, setSelectedPrice] = useState(null);
+  const [allProducts, setAllProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [cartMap, setCartMap] = useState({});
+  const [likedItems, setLikedItems] = useState({});
 
-    const fetchCartState = useCallback(async () => {
-        try {
-            const cartRes = await GetCartData();
-            if (cartRes && !cartRes.error && Array.isArray(cartRes)) {
-                const newCartMap = cartRes.reduce((acc, item) => {
-                    const pId = item.product?.id || item.product_id;
-                    if (pId) acc[pId] = item.id;
-                    return acc;
-                }, {});
-                setCartMap(newCartMap);
-            }
-        } catch (e) {
-            console.error("Failed to refresh cart state:", e);
-        }
-    }, [GetCartData]);
+  // Filter states - Yeh waise hi rahenge
+  const [selectedGender, setSelectedGender] = useState(null);
+  const [selectedShape, setSelectedShape] = useState(null);
+  const [selectedPrice, setSelectedPrice] = useState(null);
 
-    const fetchPageData = useCallback(async () => {
-        setLoading(true);
-        setError(null);
-        try {
-            // 2. Products aur Favourites ko ek saath fetch karein
-            const [productsRes, favsRes] = await Promise.all([
-                getProductsData(),
-                GetFavourites()
-            ]);
+  // 2. Ek naya fetchData function banaya gaya hai jo smart hai
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    setError(null);
 
-            if (productsRes && Array.isArray(productsRes)) {
-                const formatted = productsRes.map((p, index) => ({
-                    id: p.id,
-                    brand: p.brand_name.replace(/['"]/g, ''),
-                    name: p.product_name.replace(/['"]/g, ''),
-                    image: (p.images?.[0]?.image) ? `${BASE_URL}${p.images[0].image}` : 'https://via.placeholder.com/150',
-                    price: parseFloat(p.price),
-                    originalPrice: parseFloat(p.originalPrice || p.price * 1.4),
-                    rating: p.rating || 4.5,
-                    gender: index % 3 === 0 ? 'men' : index % 3 === 1 ? 'women' : 'kids',
-                    shape: shapeFilters[index % shapeFilters.length].id,
-                }));
-                setAllProducts(formatted);
-            } else {
-                setError('No products found.');
-            }
+    // Frontend filters ko backend API parameters mein badlein
+    const apiFilters = {};
+    if (selectedGender) apiFilters.gender = selectedGender;
+    if (selectedShape) apiFilters.shape = selectedShape;
+    if (selectedPrice) {
+      if (selectedPrice === 'p1') apiFilters.max_price = 499;
+      if (selectedPrice === 'p2') {
+        apiFilters.min_price = 500;
+        apiFilters.max_price = 999;
+      }
+      if (selectedPrice === 'p3') {
+        apiFilters.min_price = 1000;
+      }
+    }
 
-            // 3. Favourites data se 'likedItems' state ko set karein
-            if (favsRes && !favsRes.error && Array.isArray(favsRes)) {
-                const newLikedMap = favsRes.reduce((acc, fav) => {
-                    if (fav.product?.id) {
-                        acc[fav.product.id] = true;
-                    }
-                    return acc;
-                }, {});
-                setLikedItems(newLikedMap);
-            }
+    try {
+      // Agar koi filter nahi laga hai, to saare products fetch karo
+      // Warna naye FilterProducts function ko call karo
+      const productsRes =
+        Object.keys(apiFilters).length > 0
+          ? await FilterProducts(apiFilters)
+          : await getProductsData();
 
-            await fetchCartState();
-        } catch (err) {
-            setError('Could not load data. Please try again.');
-        } finally {
-            setLoading(false);
-        }
-    }, [getProductsData, GetFavourites, fetchCartState]);
+      // Cart aur Favourites ka data bhi fetch kar lo
+      const [cartRes, favsRes] = await Promise.all([
+        GetCartData(),
+        GetFavourites(),
+      ]);
 
-    useEffect(() => {
-        if (isFocused) {
-            fetchPageData();
-        }
-    }, [isFocused, fetchPageData]);
+      // Products ko format karna (aapka purana logic)
+      if (productsRes && Array.isArray(productsRes)) {
+        const formatted = productsRes.map((p, index) => ({
+          id: p.id,
+          brand: p.brand_name.replace(/['"]/g, ''),
+          name: p.product_name.replace(/['"]/g, ''),
+          image: p.images?.[0]?.image
+            ? `${BASE_URL}${p.images[0].image}`
+            : 'https://via.placeholder.com/150',
+          price: parseFloat(p.price),
+          originalPrice: parseFloat(p.originalPrice || p.price * 1.4),
+          rating: p.rating || 4.5,
+          gender: index % 3 === 0 ? 'men' : index % 3 === 1 ? 'women' : 'kids',
+          shape: shapeFilters[index % shapeFilters.length].id,
+        }));
+        setAllProducts(formatted);
+      } else {
+        setAllProducts([]); // Filter mein kuch na mile to list khali karo
+        setError('No products found for these filters.');
+      }
 
-    const handleAddToCart = async (product) => {
-        try {
-            const res = await AddToCart({ product_id: product.id, quantity: 1 });
-            setCartMap(prev => ({ ...prev, [res.product_id]: res.id }));
-            showMessage({ message: 'Added to Cart', type: 'success' });
-        } catch (err) {
-            showMessage({ message: 'Error adding item', type: 'danger' });
-            if (err.response?.status === 400) fetchCartState();
-        }
-    };
+      // Cart aur Favourites state update karna (aapka purana logic)
+      if (cartRes && !cartRes.error) {
+        const newCartMap = (cartRes || []).reduce((acc, item) => {
+          const pId = item.product?.id || item.product_id;
+          if (pId) acc[pId] = item.id;
+          return acc;
+        }, {});
+        setCartMap(newCartMap);
+      }
+      if (favsRes && !favsRes.error) {
+        const newLikedMap = (favsRes || []).reduce((acc, fav) => {
+          if (fav.product?.id) acc[fav.product.id] = true;
+          return acc;
+        }, {});
+        setLikedItems(newLikedMap);
+      }
+    } catch (err) {
+      setError('Could not load data. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  }, [
+    getProductsData,
+    FilterProducts,
+    GetCartData,
+    GetFavourites,
+    selectedGender,
+    selectedShape,
+    selectedPrice,
+  ]);
 
-    const handleRemoveFromCart = async (product) => {
-        const cartItemId = cartMap[product.id];
-        if (!cartItemId) return;
-        try {
-            await Removefromcart(cartItemId);
-            setCartMap(prev => {
-                const newMap = { ...prev };
-                delete newMap[product.id];
-                return newMap;
-            });
-            showMessage({ message: 'Removed From Cart', type: 'success' });
-        } catch (err) {
-            showMessage({ message: 'Error removing item', type: 'danger' });
-        }
-    };
+  // 3. Ek hi useEffect ab saara kaam karega
+  useEffect(() => {
+    if (isFocused) {
+      fetchData();
+    }
+  }, [isFocused, fetchData]);
 
-    // 4. Sabse Important: API call ke saath naya 'toggleLike' function
-    const toggleLike = async (productId, shouldBeLiked) => {
-        const originalLikedItems = { ...likedItems };
-        setLikedItems(prev => ({ ...prev, [productId]: shouldBeLiked }));
+  // Baaki ke functions (cart, like etc.) jaise the waise hi hain
+  const handleAddToCart = async product => {
+    try {
+      const res = await AddToCart({ product_id: product.id, quantity: 1 });
+      setCartMap(prev => ({ ...prev, [res.product_id]: res.id }));
+      showMessage({ message: 'Added to Cart', type: 'success' });
+    } catch (err) {
+      showMessage({ message: 'Error adding item', type: 'danger' });
+      if (err.response?.status === 400) fetchData();
+    }
+  };
 
-        try {
-            if (shouldBeLiked) {
-                const response = await AddToFavourites(productId);
-                if (response && response.error) {
-                    throw new Error(response.message || 'Failed to add to favourites');
-                }
-                showMessage({ message: 'Added to Favourites', type: 'success', icon: 'success' });
-            } else {
-                const response = await RemoveFromFavourites(productId);
-                if (response && response.error) {
-                    throw new Error(response.message || 'Failed to remove from favourites');
-                }
-                showMessage({ message: 'Removed from Favourites', type: 'info', icon: 'info' });
-            }
-        } catch (err) {
-            showMessage({ message: 'Error', description: err.message, type: 'danger', icon: 'danger' });
-            setLikedItems(originalLikedItems);
-        }
-    };
+  const handleRemoveFromCart = async product => {
+    const cartItemId = cartMap[product.id];
+    if (!cartItemId) return;
+    try {
+      await Removefromcart(cartItemId);
+      setCartMap(prev => {
+        const newMap = { ...prev };
+        delete newMap[product.id];
+        return newMap;
+      });
+      showMessage({ message: 'Removed From Cart', type: 'success' });
+    } catch (err) {
+      showMessage({ message: 'Error removing item', type: 'danger' });
+    }
+  };
 
-    const clearFilters = () => {
-        setSelectedGender(null);
-        setSelectedShape(null);
-        setSelectedPrice(null);
-    };
+  const toggleLike = async (productId, shouldBeLiked) => {
+    const originalLikedItems = { ...likedItems };
+    setLikedItems(prev => ({ ...prev, [productId]: shouldBeLiked }));
+    try {
+      const response = shouldBeLiked
+        ? await AddToFavourites(productId)
+        : await RemoveFromFavourites(productId);
+      if (response && response.error) throw new Error(response.message);
+      showMessage({
+        message: shouldBeLiked
+          ? 'Added to Favourites'
+          : 'Removed from Favourites',
+        type: shouldBeLiked ? 'success' : 'info',
+      });
+    } catch (err) {
+      showMessage({
+        message: 'Error',
+        description: err.message,
+        type: 'danger',
+      });
+      setLikedItems(originalLikedItems);
+    }
+  };
 
-    const filteredProducts = allProducts.filter(product => {
-        const genderMatch = !selectedGender || product.gender === selectedGender;
-        const shapeMatch = !selectedShape || product.shape === selectedShape;
-        const priceMatch = !selectedPrice ||
-            (selectedPrice === 'p1' && product.price < 500) ||
-            (selectedPrice === 'p2' && product.price >= 500 && product.price <= 999) ||
-            (selectedPrice === 'p3' && product.price >= 1000 && product.price <= 1499);
-        return genderMatch && shapeMatch && priceMatch;
-    });
+  const clearFilters = () => {
+    setSelectedGender(null);
+    setSelectedShape(null);
+    setSelectedPrice(null);
+    // Clear filter karne par useEffect apne aap initial data fetch kar lega
+  };
 
-    return {
-        loading,
-        error,
-        filteredProducts,
-        cartMap,
-        likedItems,
-        filters: { selectedGender, selectedShape, selectedPrice },
-        actions: {
-            handleAddToCart,
-            handleRemoveFromCart,
-            toggleLike,
-            clearFilters,
-            setSelectedGender,
-            setSelectedShape,
-            setSelectedPrice,
-        },
-    };
+  // 4. Client-side filtering ki ab zaroorat nahi hai. Hum seedha allProducts return karenge
+  // Kyunki allProducts ab hamesha server se mila hua correct data hai
+  return {
+    loading,
+    error,
+    filteredProducts: allProducts,
+    cartMap,
+    likedItems,
+    filters: { selectedGender, selectedShape, selectedPrice },
+    actions: {
+      handleAddToCart,
+      handleRemoveFromCart,
+      toggleLike,
+      clearFilters,
+      setSelectedGender,
+      setSelectedShape,
+      setSelectedPrice,
+    },
+  };
 };

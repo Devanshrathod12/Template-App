@@ -53,7 +53,7 @@ const FilterCategory = ({ navigation }) => {
             <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
             <FilterCategoryHeader
                 onToggleSidebar={toggleSidebar}
-                onGoToCart={() => navigation.navigate('Cart')}
+                onGoToCart={() => navigation.navigate('AllOrders')}
             />
             {renderContent()}
             <FilterSidebar

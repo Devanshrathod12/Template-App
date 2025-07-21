@@ -340,10 +340,10 @@ export const ApiProvider = ({ children }) => {
    const CancelOrder = async (orderId) => {
     try {
       const token = await AsyncStorage.getItem('authToken');
-      // Using PATCH method as per your screenshot
+     
       const response = await axios.patch(
         `${URL}order/cncel/${orderId}/`,
-        {}, // Sending an empty body as PATCH might require it
+        {}, 
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -364,6 +364,7 @@ export const ApiProvider = ({ children }) => {
     }
   };
 
+  // add krna favrat me 
  const AddToFavourites = async (productId) => {
     console.log('[ApiContext] Trying to add to favourites with Product ID:', productId);
     try {
@@ -389,6 +390,7 @@ export const ApiProvider = ({ children }) => {
     }
   };
 
+  // jo add ua wo get krna fvrat
   const GetFavourites = async () => {
     console.log('[ApiContext] Trying to get favourites list...');
     try {
@@ -412,6 +414,7 @@ export const ApiProvider = ({ children }) => {
     }
   };
 
+  // remove krna favrat mese 
 const RemoveFromFavourites = async (productId) => {
   try {
     const token = await AsyncStorage.getItem('authToken');
@@ -424,6 +427,68 @@ const RemoveFromFavourites = async (productId) => {
     return { error: true, message: 'Failed to remove from favourites' };
   }
 };
+
+// filter api hai 
+const FilterProducts = async (filters) => {
+        console.log('[ApiContext] Filtering products with:', filters);
+        try {
+            const token = await AsyncStorage.getItem('authToken');
+
+            const queryParams = new URLSearchParams(filters).toString();
+
+            const response = await axios.get(
+                `${URL}products/filter/?${queryParams}`,
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                }
+            );
+            console.log('[ApiContext] FilterProducts Success:', response.data);
+            return response.data;
+        } catch (error) {
+            console.error('[ApiContext] FilterProducts Error:', error.response?.data || error.message);
+            return {
+                error: true,
+                message: error.response?.data?.detail || 'Failed to filter products',
+            };
+        }
+    };
+
+    // serch krne ke lite api 
+     const SearchProducts = async (query) => {
+        console.log(`[ApiContext] Searching for products with query: "${query}"`);
+
+        // Agar search query khali hai to API call na karein
+        if (!query || query.trim() === '') {
+            console.log('[ApiContext] Search query is empty, returning empty array.');
+            return []; // Khali array return kar dein
+        }
+
+        try {
+            const token = await AsyncStorage.getItem('authToken');
+            
+            // Query ko encode taki problm na ho $%#@! eske liye 
+            const encodedQuery = encodeURIComponent(query);
+
+            const response = await axios.get(
+                `${URL}products/search/?query=${encodedQuery}`, // Sahi endpoint
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                }
+            );
+            console.log('[ApiContext] SearchProducts Success:', response.data);
+            return response.data; 
+        } catch (error) {
+            console.error('[ApiContext] SearchProducts Error:', error.response?.data || error.message);
+            return {
+                error: true,
+                message: error.response?.data?.detail || 'Failed to search for products',
+            };
+        }
+    };
 
   return (
     <ApiContext.Provider
@@ -446,7 +511,9 @@ const RemoveFromFavourites = async (productId) => {
         CancelOrder,
         AddToFavourites,
         GetFavourites,
-        RemoveFromFavourites
+        RemoveFromFavourites,
+        FilterProducts,
+        SearchProducts
       }}
     >
       {children}

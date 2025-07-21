@@ -1,4 +1,4 @@
-import { Cart, FilterCategory, ForgetPass, HomeScreen, loder, OtpVerify, ResetPassword, SignIn, wishlist } from "../Screen";
+import { AllOrders, Cart, FilterCategory, ForgetPass, HomeScreen, loder, OtpVerify, ResetPassword, SignIn, wishlist } from "../Screen";
 import AuthGate from "../Screen/Auth/AuthGate";
 import DeliveryAddress from "../Screen/DeliveryAddress/DeliveryAddress";
 import SeeOrder from "../Screen/GetOrders/SeeOrder";
@@ -21,5 +21,6 @@ export default {
      wishlist:"wishlist",
      DeliveryAddress:"DeliveryAddress",
      Checkout:"Checkout",
-     SeeOrder:"SeeOrder"
+     SeeOrder:"SeeOrder",
+     AllOrders:"AllOrders"
 }
