@@ -3,7 +3,7 @@ import { useApi } from '../../Context/ApiContext';
 import { useIsFocused } from '@react-navigation/native';
 import { showMessage } from 'react-native-flash-message';
 
-const BASE_URL = 'https://accounts-1.onrender.com';
+const BASE_URL = 'https://accounts-3.onrender.com';
 const shapeFilters = [ { id: 'rectangle', title: 'Rectangle' }, { id: 'round', title: 'Round' }, { id: 'square', title: 'Square' } ];
 
 export const useProductFilters = () => {

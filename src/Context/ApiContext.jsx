@@ -5,7 +5,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 const ApiContext = createContext();
 
 export const ApiProvider = ({ children }) => {
-  const URL = 'https://accounts-1.onrender.com/';
+  const URL = 'https://accounts-3.onrender.com/';
 
   // Signup function
   const SignupUser = async userdata => {
@@ -364,6 +364,67 @@ export const ApiProvider = ({ children }) => {
     }
   };
 
+ const AddToFavourites = async (productId) => {
+    console.log('[ApiContext] Trying to add to favourites with Product ID:', productId);
+    try {
+      const token = await AsyncStorage.getItem('authToken');
+      const response = await axios.post(
+        `${URL}favourites/add/`,
+        { product: productId },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+      console.log('[ApiContext] AddToFavourites Success:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('[ApiContext] AddToFavourites Error:', error.response?.data || error.message);
+      return {
+        error: true,
+        message: error.response?.data?.error || 'Failed to add to favourites',
+      };
+    }
+  };
+
+  const GetFavourites = async () => {
+    console.log('[ApiContext] Trying to get favourites list...');
+    try {
+      const token = await AsyncStorage.getItem('authToken');
+      const response = await axios.get(
+        `${URL}favourites/list/`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      console.log('[ApiContext] GetFavourites Success:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('[ApiContext] GetFavourites Error:', error.response?.data || error.message);
+      return {
+        error: true,
+        message: error.response?.data?.detail || 'Failed to fetch favourites',
+      };
+    }
+  };
+
+const RemoveFromFavourites = async (productId) => {
+  try {
+    const token = await AsyncStorage.getItem('authToken');
+    const response = await axios.delete(`${URL}favourites/remove/${productId}/`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error removing favourite:", error.response?.data || error.message);
+    return { error: true, message: 'Failed to remove from favourites' };
+  }
+};
+
   return (
     <ApiContext.Provider
       value={{
@@ -382,7 +443,10 @@ export const ApiProvider = ({ children }) => {
         GetAddresses,
         PlaceOrder,
         GetOrders,
-        CancelOrder
+        CancelOrder,
+        AddToFavourites,
+        GetFavourites,
+        RemoveFromFavourites
       }}
     >
       {children}

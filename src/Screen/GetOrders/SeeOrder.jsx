@@ -35,8 +35,8 @@ const SeeOrder = () => {
                 )}
                 keyExtractor={(item) => item.id.toString()}
                 contentContainerStyle={styles.listContainer}
-                onRefresh={actions.fetchOrders} // For pull-to-refresh
-                refreshing={loading} // Shows the refresh spinner
+                onRefresh={actions.fetchOrders} 
+                refreshing={loading} 
             />
         );
     };
@@ -53,7 +53,7 @@ const SeeOrder = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: colors.backgroundFaded || '#f5f5f5', // Use global color or fallback
+        backgroundColor: colors.backgroundFaded || '#f5f5f5', 
     },
     listContainer: {
         paddingHorizontal: 15,

@@ -45,7 +45,7 @@ const styles = StyleSheet.create({
     flex: 1,
     borderWidth: 1,
     borderColor: colors.primary,
-    backgroundColor: '#E7F2FF', // This can also be a global color if you want
+    backgroundColor: '#E7F2FF', 
     paddingVertical: verticalScale(15),
     borderRadius: scale(12),
     alignItems: 'center',

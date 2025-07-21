@@ -3,7 +3,7 @@ import { useApi } from '../../Context/ApiContext';
 import { showMessage } from 'react-native-flash-message';
 import { useIsFocused } from '@react-navigation/native';
 
-const BASE_URL = 'https://accounts-1.onrender.com';
+const BASE_URL = 'https://accounts-3.onrender.com';
 
 const useProductDetails = (productId) => {
   const { getProductsData, AddToCart, Removefromcart, UpdateCartQuantity, GetCartData } = useApi();
