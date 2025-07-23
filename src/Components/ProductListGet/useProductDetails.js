@@ -1,201 +1,75 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { useApi } from '../../Context/ApiContext';
-import { showMessage } from 'react-native-flash-message';
-import { useIsFocused } from '@react-navigation/native';
+import { useMemo, useState, useEffect } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
+import {
+  selectAllProducts,
+  selectCartMap,
+  selectLikedItems,
+  addToCart,
+  removeFromCart,
+  toggleLike,
+} from '../../redux/Product/productSlice';
 
-const BASE_URL = 'https://accounts-3.onrender.com';
+export const useProductDetails = (productId) => {
+  const dispatch = useDispatch();
 
-const useProductDetails = (productId) => {
-  const { 
-    getProductsData, 
-    AddToCart, 
-    Removefromcart, 
-    UpdateCartQuantity, 
-    GetCartData,
-    GetFavourites,
-    AddToFavourites,
-    RemoveFromFavourites
-  } = useApi();
-  
-  const isFocused = useIsFocused();
+  const allProducts = useSelector(selectAllProducts);
+  const cartMap = useSelector(selectCartMap);
+  const likedMap = useSelector(selectLikedItems); 
 
-  const [productData, setProductData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [cartMap, setCartMap] = useState({});
+  const productData = useMemo(
+    () => allProducts.find(p => p.id === productId),
+    [allProducts, productId]
+  );
+  const cartItem = cartMap[productId];
+
   const [quantity, setQuantity] = useState(1);
-  const [isUpdatingCart, setIsUpdatingCart] = useState(false);
-  const [isLiked, setIsLiked] = useState(false);
-
-  const debounceTimeout = useRef(null);
-
-  const initializePageState = useCallback(async () => {
-    setLoading(true);
-    try {
-      const [productsRes, cartRes, favsRes] = await Promise.all([
-        getProductsData(), 
-        GetCartData(),
-        GetFavourites()
-      ]);
-      
-      const apiProduct = productsRes?.find(p => p.id == productId);
-      if (!apiProduct) throw new Error('Product not found.');
-
-      const formattedProduct = {
-        id: apiProduct.id,
-        brand: apiProduct.brand_name.replace(/['"]/g, ''),
-        name: apiProduct.product_name.replace(/['"]/g, ''),
-        modelNo: apiProduct.product_id,
-        images: apiProduct.images.map(img => `${BASE_URL}${img.image}`),
-        price: parseFloat(apiProduct.price),
-        originalPrice: parseFloat(apiProduct.originalPrice || apiProduct.price * 1.4),
-        stock: parseInt(apiProduct.quantity, 10),
-        rating: apiProduct.rating || 4.5,
-        reviewCount: apiProduct.reviewCount || 152,
-        offer: apiProduct.offer || '30% Off',
-        description: apiProduct.description,
-        specifications: Object.entries(apiProduct.specification || {}).map(([key, value]) => ({
-          title: key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
-          value: value,
-        })),
-      };
-      setProductData(formattedProduct);
-
-      const cartItems = Array.isArray(cartRes) ? cartRes : cartRes?.items || [];
-      const newCartMap = {};
-      cartItems.forEach(item => {
-        const pId = item.product?.id || item.product_id || item.product;
-        if (pId) newCartMap[pId] = item.id;
-      });
-      setCartMap(newCartMap);
-      
-      if (favsRes && !favsRes.error) {
-          const isFavourite = favsRes.some(fav => fav.product?.id == productId);
-          setIsLiked(isFavourite);
-      }
-
-      if (newCartMap[apiProduct.id]) {
-        const cartItem = cartItems.find(item => item.id === newCartMap[apiProduct.id]);
-        if (cartItem) setQuantity(cartItem.quantity);
-      } else {
-        setQuantity(1);
-      }
-    } catch (err) {
-      console.error('Failed to initialize page:', err);
-      setProductData(null);
-    } finally {
-      setLoading(false);
-    }
-  }, [productId, getProductsData, GetCartData, GetFavourites]);
 
   useEffect(() => {
-    if (isFocused && productId) {
-      initializePageState();
-    }
-  }, [isFocused, productId, initializePageState]);
-
-  const handleAddToCart = async () => {
-    if (!productData || isUpdatingCart) return;
-    setIsUpdatingCart(true);
-    try {
-      const payload = { product_id: productData.id, quantity };
-      const res = await AddToCart(payload);
-      if (!res || res.error) throw new Error(res.message || 'Failed to add to cart');
-      setCartMap(prev => ({ ...prev, [productData.id]: res.id }));
-      showMessage({ message: 'Added to Cart!', type: 'success' });
-    } catch (error) {
-      const errorMessage = error.response?.data?.detail || error.message;
-      if (/already in cart|exists/i.test(errorMessage)) {
-        showMessage({ message: "Already in cart. Syncing...", type: "info" });
-        initializePageState();
-      } else {
-        showMessage({ message: errorMessage, type: 'danger' });
-      }
-    } finally {
-      setIsUpdatingCart(false);
-    }
-  };
-
-  const handleRemoveFromCart = async () => {
-    const cartItemId = cartMap[productData.id];
-    if (!cartItemId || isUpdatingCart) return;
-    setIsUpdatingCart(true);
-    try {
-      await Removefromcart(cartItemId);
-      setCartMap(prev => {
-        const newMap = { ...prev };
-        delete newMap[productData.id];
-        return newMap;
-      });
+    if (cartItem && cartItem.quantity) {
+      setQuantity(cartItem.quantity);
+    } else {
       setQuantity(1);
-      showMessage({ message: 'Removed from Cart', type: 'success' });
-    } catch (error) {
-      const errorMessage = error.response?.data?.detail || error.message;
-      showMessage({ message: `Could not remove: ${errorMessage}`, type: 'danger' });
-      initializePageState();
-    } finally {
-      setIsUpdatingCart(false);
+    }
+  }, [cartItem]);
+
+  const handleAddToCart = () => {
+    if (productData) {
+      dispatch(addToCart({ ...productData, quantity }));
     }
   };
 
-  const handleUpdateQuantity = (newQuantity) => {
-    const cartItemId = cartMap[productData.id];
-    if (!cartItemId) return;
-    clearTimeout(debounceTimeout.current);
-    debounceTimeout.current = setTimeout(async () => {
-      try {
-        await UpdateCartQuantity(cartItemId, newQuantity);
-      } catch (error) {
-        showMessage({ message: 'Could not update quantity.', type: 'danger' });
-        initializePageState();
-      }
-    }, 500);
-  };
-
-  const incrementQuantity = () => {
-    if (quantity >= (productData?.stock || 0)) return;
-    const newQuantity = quantity + 1;
-    setQuantity(newQuantity);
-    if (cartMap[productData.id]) handleUpdateQuantity(newQuantity);
-  };
-
-  const decrementQuantity = () => {
-    if (quantity <= 1) return;
-    const newQuantity = quantity - 1;
-    setQuantity(newQuantity);
-    if (cartMap[productData.id]) handleUpdateQuantity(newQuantity);
-  };
-
-  const toggleLike = async () => {
-    const shouldBeLiked = !isLiked;
-    const originalIsLiked = isLiked;
-    setIsLiked(shouldBeLiked);
-
-    try {
-      const response = shouldBeLiked
-        ? await AddToFavourites(productId)
-        : await RemoveFromFavourites(productId);
-
-      if (response && response.error) throw new Error(response.message);
-      
-      showMessage({ 
-        message: shouldBeLiked ? "Added to Favourites" : "Removed from Favourites", 
-        type: shouldBeLiked ? "success" : "info",
-        icon: "success"
-      });
-
-    } catch (err) {
-      setIsLiked(originalIsLiked);
-      showMessage({ message: "Error", description: err.message || 'An error occurred', type: "danger", icon: "danger" });
+  const handleRemoveFromCart = () => {
+    if (productData) {
+      dispatch(removeFromCart(productData.id));
     }
   };
 
-  const isInCart = !!cartMap[productData?.id];
+  const increment = () => {
+    if (productData && quantity < productData.stock) {
+      setQuantity(q => q + 1);
+    }
+  };
+
+  const decrement = () => {
+    if (quantity > 1) {
+      setQuantity(q => q - 1);
+    }
+  };
+
+  const handleToggleLike = () => {
+    if (productId) {
+      dispatch(toggleLike(productId));
+    }
+  };
+
+  const isInCart = !!cartItem;
+  const isLiked = !!likedMap[productId];
   const isOutOfStock = productData?.stock <= 0;
 
   return {
-    loading,
+    loading: false,
     productData,
-    isUpdatingCart,
+    isUpdatingCart: false,
     isInCart,
     isOutOfStock,
     quantity,
@@ -203,9 +77,9 @@ const useProductDetails = (productId) => {
     actions: {
       handleAddToCart,
       handleRemoveFromCart,
-      incrementQuantity,
-      decrementQuantity,
-      toggleLike,
+      incrementQuantity: increment,
+      decrementQuantity: decrement,
+      toggleLike: handleToggleLike,
     },
   };
 };

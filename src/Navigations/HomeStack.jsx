@@ -17,8 +17,8 @@ const HomeStack = () => {
       //            }}
     >
       <Stack.Screen 
-        name={NavigationString.HomeScreen}
-        component={Screen.HomeScreen}
+        name={NavigationString.Template}
+        component={Screen.Template}
         options={{headerShown:false}}
       />
     
@@ -37,11 +37,11 @@ const HomeStack = () => {
         component={Screen.AllOrders} 
         options={{headerShown:false}}
       />
-      <Stack.Screen 
+      {/* <Stack.Screen 
         name={NavigationString.Template} 
         component={Screen.Template} 
         options={{headerShown:false}}
-      />
+      /> */}
     </Stack.Navigator>
   );
 };

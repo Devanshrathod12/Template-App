@@ -9,13 +9,13 @@ import colors from '../../styles/colors'
 const Template = () => {
   return (
     <>
-    <SafeAreaView>
+    <SafeAreaView style={styles.maincontainer}>
         <ScrollView>
     <TempHeader/>
     <TempNewArrivals/>
     <TempAllCategories/>
     <TempTrendingFramesSection/>
-    <TempFramesShapes styles={styles.shapframe}/>
+    <TempFramesShapes />
         </ScrollView>
     </SafeAreaView>
     </>
@@ -25,5 +25,7 @@ const Template = () => {
 export default Template
 
 const styles = StyleSheet.create({
-    shapframe:colors.WhiteBackgroudcolor
+    maincontainer:{
+      backgroundColor:"white"
+    }
 })

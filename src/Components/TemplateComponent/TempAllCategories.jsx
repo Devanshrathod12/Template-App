@@ -31,6 +31,7 @@ const TempAllCategories = () => {
 
   return (
     <>
+    <View styles={styles.maincontainer}>
       <Text style={styles.title}>All Categories</Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.list}>
         {categories.map((item) => {
@@ -46,6 +47,7 @@ const TempAllCategories = () => {
           );
         })}
       </ScrollView>
+    </View>
     </>
   );
 };
@@ -60,6 +62,7 @@ const styles = StyleSheet.create({
     marginLeft: scale(16),
     marginTop: verticalScale(24),
     marginBottom: verticalScale(8),
+    
     
   },
   list: { 
@@ -88,4 +91,7 @@ const styles = StyleSheet.create({
   activebar:{
     borderColor: colors.ProductDetailsButton
   },
+  maincontainer:{
+    backgroundColor:"green"
+  }
 });

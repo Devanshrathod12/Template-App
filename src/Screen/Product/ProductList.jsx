@@ -3,7 +3,9 @@ import { StyleSheet, SafeAreaView, StatusBar, ScrollView, View } from 'react-nat
 import colors from '../../styles/colors'; 
 import { scale, verticalScale } from '../../styles/styleconfig'; 
 
+// Import the new Redux-powered hook
 import useProductDetails from '../../Components/ProductListGet/useProductDetails';
+
 import ProductDetailsLoading from '../../Components/ProductListGet/ProductDetailsLoading';
 import ProductDetailsEmpty from '../../Components/ProductListGet/ProductDetailsEmpty';
 import ProductDetailsHeader from '../../Components/ProductListGet/ProductDetailsHeader';
@@ -14,7 +16,7 @@ import ProductDescription from '../../Components/ProductListGet/ProductDescripti
 import ProductActions from '../../Components/ProductListGet/ProductActions';
 
 const ProductList = ({ route, navigation }) => {
- const { productId } = route.params;
+  const { productId } = route.params;
 
   const {
     loading,
@@ -66,7 +68,7 @@ const ProductList = ({ route, navigation }) => {
         isOutOfStock={isOutOfStock}
         onAddToCart={actions.handleAddToCart}
         onRemoveFromCart={actions.handleRemoveFromCart}
-        onBuyNow={() => navigation.navigate('Cart', { product: productData })}
+        onBuyNow={() => navigation.navigate('Cart')}
       />
     </SafeAreaView>
   );
@@ -86,6 +88,5 @@ const styles = StyleSheet.create({
     marginTop: verticalScale(-20),
   },
 });
-
 
 export default ProductList;

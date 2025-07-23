@@ -1,6 +1,5 @@
- 
- import React, { useState } from 'react';
-import { SafeAreaView, StatusBar, FlatList, StyleSheet, View } from 'react-native';
+import React, { useState } from 'react';
+import { SafeAreaView, StatusBar, FlatList, StyleSheet } from 'react-native';
 import { useProductFilters } from '../../Components/ProductFilter/useProductFilters';
 import colors from '../../styles/colors';
 
@@ -24,7 +23,7 @@ const FilterCategory = ({ navigation }) => {
         if (error) {
             return <ProductListError message={error} />;
         }
-        if (filteredProducts.length === 0) {
+        if (!filteredProducts || filteredProducts.length === 0) {
             return <ProductListEmpty />;
         }
         return (
@@ -40,7 +39,7 @@ const FilterCategory = ({ navigation }) => {
                         isLiked={!!likedItems[item.id]}
                         onAddToCart={actions.handleAddToCart}
                         onRemoveFromCart={actions.handleRemoveFromCart}
-                        onToggleLike={actions.toggleLike}
+                        onToggleLike={() => actions.toggleLike(item.id)}
                         onPress={() => navigation.navigate('ProductList', { productId: item.id })}
                     />
                 )}

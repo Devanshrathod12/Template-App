@@ -1,69 +1,23 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
 import Icon from 'react-native-vector-icons/Feather';
 import AntIcon from 'react-native-vector-icons/AntDesign';
 import colors from '../../styles/colors';
-import { useApi } from '../../Context/ApiContext';
-import { showMessage } from 'react-native-flash-message';
 
 const ProductCard = ({
   product,
   isAddedToCart,
-  isLiked: initialIsLiked,
+  isLiked,
   onAddToCart,
   onRemoveFromCart,
   onToggleLike,
   onPress,
 }) => {
-  const { AddToFavourites, RemoveFromFavourites } = useApi();
-  const [isLiked, setIsLiked] = useState(initialIsLiked);
-
-  const handleFavouritePress = async () => {
-    if (!isLiked) {
-      const response = await AddToFavourites(product.id);
-      if (response && !response.error) {
-        setIsLiked(true);
-        showMessage({
-          message: 'Added to Favourites',
-          type: 'success',
-          icon: 'success',
-        });
-      } else {
-        showMessage({
-          message: 'Error',
-          description: response.message || 'Could not add to favourites.',
-          type: 'danger',
-          icon: 'danger',
-        });
-      }
-    } else {
-      const response = await RemoveFromFavourites(product.id);
-      if (response && !response.error) {
-        setIsLiked(false);
-        showMessage({
-          message: 'Removed from Favourites',
-          type: 'info',
-          icon: 'info',
-        });
-      } else {
-        showMessage({
-          message: 'Error',
-          description: response.message || 'Could not remove from favourites.',
-          type: 'danger',
-          icon: 'danger',
-        });
-      }
-    }
-  };
-
   return (
     <View style={styles.card}>
       <TouchableOpacity onPress={onPress} activeOpacity={0.9}>
         <Image source={{ uri: product.image }} style={styles.image} />
-        <TouchableOpacity
-          onPress={handleFavouritePress}
-          style={styles.wishlistButton}
-        >
+        <TouchableOpacity onPress={onToggleLike} style={styles.wishlistButton}>
           <AntIcon
             name={isLiked ? 'heart' : 'hearto'}
             size={20}
@@ -120,7 +74,7 @@ const ProductCard = ({
     </View>
   );
 };
-
+// Styles remain exactly the same
 const styles = StyleSheet.create({
   card: {
     flex: 1,
@@ -137,7 +91,7 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 140,
     resizeMode: 'contain',
-    backgroundColor: colors.background,
+    backgroundColor: colors.WhiteBackgroudcolor,
     borderTopLeftRadius: 12,
     borderTopRightRadius: 12,
   },
