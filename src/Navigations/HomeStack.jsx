@@ -37,6 +37,11 @@ const HomeStack = () => {
         component={Screen.AllOrders} 
         options={{headerShown:false}}
       />
+      <Stack.Screen 
+        name={NavigationString.Template} 
+        component={Screen.Template} 
+        options={{headerShown:false}}
+      />
     </Stack.Navigator>
   );
 };

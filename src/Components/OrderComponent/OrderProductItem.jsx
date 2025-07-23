@@ -4,7 +4,7 @@ import { View, Text, Image, StyleSheet } from 'react-native';
 const API_BASE_URL = 'https://accounts-3.onrender.com';
 
 const OrderProductItem = ({ item }) => {
-    const imageUrl = item.product.images?.[0]?.image ? `${API_BASE_URL}${item.product.images[0].image}` : null;
+    const imageUrl = item.product.images?.[0]?.image ? `${API_BASE_URL}${item.product.images[0].image}` : null; 
 
     return (
         <View style={styles.productItem}>

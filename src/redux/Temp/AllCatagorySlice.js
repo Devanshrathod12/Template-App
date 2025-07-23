@@ -1,0 +1,50 @@
+import { createSlice } from '@reduxjs/toolkit';
+
+const initialState = {
+  items: [
+    { 
+      id: '1', 
+      title: 'Eyeglasses', 
+      image: 'https://static5.lenskart.com/media/catalog/product/pro/1/thumbnail/480x480/9df78eab33525d08d6e5fb8d27136e95//l/i/blue-block-phone-&-computer-glasses:-gunmetal-grey-transparent-full-rim-square-lenskart-blu-lb-e13529-c5_vincent-chase-vc-e13529-c5-eyeglasses_g_898022_02_2022.jpg' 
+    },
+    { 
+      id: '2', 
+      title: 'Sunglasses', 
+      image: 'https://static5.lenskart.com/media/catalog/product/pro/1/thumbnail/480x480/9df78eab33525d08d6e5fb8d27136e95//v/i/black-grey-full-rim-wayfarer-vincent-chase-polarized-athleisure-vc-s14459-c7-sunglasses_g_2628_9_29_22.jpg' 
+    },
+    { 
+      id: '3', 
+      title: 'Power Glasses', 
+      image: 'https://static5.lenskart.com/media/catalog/product/pro/1/thumbnail/480x480/9df78eab33525d08d6e5fb8d27136e95//h/i/kids-glasses:-transparent-full-rim-square-kids-8-12-yrs-hooper-astra-hooper-hp-e10031l-c10_g_1141_09_01_23.jpg' 
+    },
+    { 
+      id: '4', 
+      title: 'For Kids', 
+      image: 'https://static5.lenskart.com/media/catalog/product/pro/1/thumbnail/480x480/9df78eab33525d08d6e5fb8d27136e95//h/i/kids-glasses:-matte-black-full-rim-rectangle-kids--8-12-yrs--hooper-flexi-hooper-hp-e10004l-c2_hooper-hp-e10004l-c2-eyeglasses_g_4296_22_march23.jpg' 
+    },
+    { 
+      id: '5', 
+      title: 'Contact Lens ', 
+      image: 'https://static5.lenskart.com/media/catalog/product/pro/1/thumbnail/480x480/9df78eab33525d08d6e5fb8d27136e95//a/i/free-aqualens-comfort-contact-lens-solution-120-ml_aqualens-comfort-contct-lens-solution-120-ml-offer__mg_7089__1.png' 
+    },
+    { 
+      id: '6', 
+      title: 'Accessories', 
+      image: 'https://cdn.eyemyeye.com/shared/images/products/A10A2004/A10A2004-1-hd.jpg' 
+    },
+  ],
+};
+
+const categoriesSlice = createSlice({
+  name: 'categories',
+  initialState,
+reducers:{
+    setNewArrivel:(state,Action) => {
+        state.items = Action.payload
+    }
+}
+});
+
+export const selectAllCategories = (state) => state.categories.items;
+
+export default categoriesSlice.reducer;
