@@ -1,26 +1,50 @@
- 
- import React from 'react';
-import { SafeAreaView, StatusBar, FlatList, StyleSheet } from 'react-native';
-import { useOrders } from '../../Components/OrderComponent/useOrders';
-import colors from '../../styles/colors'; 
+import React, { useState } from 'react';
+import { SafeAreaView, StatusBar, FlatList, StyleSheet, Alert } from 'react-native';
+import { useSelector, useDispatch } from 'react-redux';
+import colors from '../../styles/colors';
 
+// Redux se actions aur selectors import karein
+import { selectAllOrders, cancelOrder } from '../../redux/Product/productSlice'; // Path apen hisaab se set karein
+
+// Aapke UI components (inmein koi change nahi karna hai)
 import OrdersHeader from '../../Components/OrderComponent/OrdersHeader';
 import OrderCard from '../../Components/OrderComponent/OrderCard';
-import OrdersLoading from '../../Components/OrderComponent/OrdersLoading';
-import OrdersError from '../../Components/OrderComponent/OrdersError';
 import OrdersEmpty from '../../Components/OrderComponent/OrdersEmpty';
 
 const SeeOrder = () => {
-    const { loading, error, orders, cancellingId, actions } = useOrders();
+    const dispatch = useDispatch();
+    
+    // YEH LINE SABSE ZAROORI HAI: Hum seedha Redux store se orders le rahe hain.
+    const orders = useSelector(selectAllOrders);
+    
+    // Cancel button ke liye local loading state
+    const [cancellingId, setCancellingId] = useState(null);
+
+    const handleCancelOrder = (orderId) => {
+        Alert.alert(
+            'Confirm Cancellation',
+            'Are you sure you want to cancel this order?',
+            [
+                { text: 'No', style: 'cancel' },
+                {
+                    text: 'Yes, Cancel',
+                    onPress: () => {
+                        setCancellingId(orderId);
+                        setTimeout(() => {
+                            // Redux action ko dispatch karein
+                            dispatch(cancelOrder(orderId));
+                            setCancellingId(null);
+                        }, 500);
+                    },
+                    style: 'destructive',
+                },
+            ]
+        );
+    };
 
     const renderContent = () => {
-        if (loading && orders.length === 0) {
-            return <OrdersLoading />;
-        }
-        if (error) {
-            return <OrdersError message={error} />;
-        }
-        if (!loading && orders.length === 0) {
+        // Kyunki data local hai, humein sirf yeh check karna hai ki orders hain ya nahi.
+        if (!orders || orders.length === 0) {
             return <OrdersEmpty />;
         }
         return (
@@ -29,14 +53,12 @@ const SeeOrder = () => {
                 renderItem={({ item }) => (
                     <OrderCard
                         order={item}
-                        onCancel={actions.handleCancelOrder}
+                        onCancel={handleCancelOrder}
                         isCancelling={cancellingId === item.id}
                     />
                 )}
                 keyExtractor={(item) => item.id.toString()}
                 contentContainerStyle={styles.listContainer}
-                onRefresh={actions.fetchOrders} 
-                refreshing={loading} 
             />
         );
     };
@@ -53,7 +75,7 @@ const SeeOrder = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: colors.backgroundFaded || '#f5f5f5', 
+        backgroundColor: colors.backgroundFaded || '#f5f5f5',
     },
     listContainer: {
         paddingHorizontal: 15,

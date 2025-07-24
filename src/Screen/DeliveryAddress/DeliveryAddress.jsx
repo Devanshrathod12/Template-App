@@ -11,12 +11,12 @@ import {
   ActivityIndicator,
   Image,
 } from 'react-native';
-import { useApi } from '../../Context/ApiContext'; // Adjust path
+import { useDispatch } from 'react-redux';
 import { showMessage } from 'react-native-flash-message';
 import Icon from 'react-native-vector-icons/Feather';
-import colors from '../../styles/colors'; // Adjust path
+import colors from '../../styles/colors';
+import { addAddress } from '../../redux/Product/productSlice';
 
-// You can include this small component to show what the user is buying
 const OrderSummary = ({ product, cartItems, totalPrice }) => {
   if (product) {
     return (
@@ -61,8 +61,7 @@ const OrderSummary = ({ product, cartItems, totalPrice }) => {
 };
 
 const DeliveryAddress = ({ route, navigation }) => {
-  const { AddAddress } = useApi();
-  const [loading, setLoading] = useState(false);
+  const dispatch = useDispatch();
   const { product, cartItems, totalPrice } = route.params || {};
 
   const [fullName, setFullName] = useState('');
@@ -89,9 +88,9 @@ const DeliveryAddress = ({ route, navigation }) => {
     return true;
   };
 
-  const handleSaveAndContinue = async () => {
+  const handleSaveAndContinue = () => {
     if (!validateForm()) return;
-    setLoading(true);
+
     const addressData = {
       full_name: fullName,
       phone,
@@ -102,33 +101,18 @@ const DeliveryAddress = ({ route, navigation }) => {
       state,
     };
 
-    try {
-      const response = await AddAddress(addressData);
-      if (response.error) {
-        throw new Error(response.message);
-      }
+    dispatch(addAddress(addressData));
 
-      showMessage({
-        message: 'Address Saved!',
-        description: 'Proceeding to final checkout...',
-        type: 'success',
-      });
+    showMessage({
+      message: 'Address Saved!',
+      type: 'success',
+    });
 
-      // CRITICAL: Navigate FORWARD to the final Checkout screen
-      navigation.navigate('Checkout', {
-        product: product,
-        cartItems: cartItems,
-        totalPrice: totalPrice,
-      });
-    } catch (error) {
-      showMessage({
-        message: 'Save Failed',
-        description: error.message || 'Could not save your address.',
-        type: 'danger',
-      });
-    } finally {
-      setLoading(false);
-    }
+    navigation.navigate('Checkout', {
+      product,
+      cartItems,
+      totalPrice,
+    });
   };
 
   return (
@@ -141,7 +125,7 @@ const DeliveryAddress = ({ route, navigation }) => {
         >
           <Icon name="arrow-left" size={24} color="#333" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Step 1: Add Address</Text>
+        <Text style={styles.headerTitle}>Add Address</Text>
         <View style={styles.headerIconPlaceholder} />
       </View>
 
@@ -229,24 +213,18 @@ const DeliveryAddress = ({ route, navigation }) => {
 
       <View style={styles.footer}>
         <TouchableOpacity
-          style={[styles.checkoutButton, loading && styles.disabledButton]}
+          style={styles.checkoutButton}
           onPress={handleSaveAndContinue}
-          disabled={loading}
         >
-          {loading ? (
-            <ActivityIndicator color="#FFF" />
-          ) : (
-            <Text style={styles.checkoutButtonText}>
-              Save & Continue to Checkout
-            </Text>
-          )}
+          <Text style={styles.checkoutButtonText}>
+            Save & Continue to Checkout
+          </Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
 };
 
-// --- Styles for DeliveryAddress ---
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.WhiteBackgroudcolor },
   header: {

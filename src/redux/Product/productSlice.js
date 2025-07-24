@@ -210,7 +210,6 @@ const productsData = [
       { title: 'Frame Color', value: 'Black' },
       { title: 'Material', value: 'TR90 Flexible Plastic' },
     ],
-    
   },
 
   {
